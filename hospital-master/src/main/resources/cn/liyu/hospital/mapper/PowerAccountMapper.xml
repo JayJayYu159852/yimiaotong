@@ -102,7 +102,7 @@
       <include refid="Example_Where_Clause" />
     </if>
   </delete>
-  <insert id="insert" parameterType="cn.liyu.hospital.entity.PowerAccount">
+  <insert id="insert" parameterType="cn.liyu.hospital.entity.PowerAccount" useGeneratedKeys="true" keyProperty="id">
     insert into power_account (id, name, password, 
       status, login_time, gmt_create, 
       gmt_modified)
@@ -110,7 +110,7 @@
       #{status,jdbcType=INTEGER}, #{loginTime,jdbcType=TIMESTAMP}, #{gmtCreate,jdbcType=TIMESTAMP}, 
       #{gmtModified,jdbcType=TIMESTAMP})
   </insert>
-  <insert id="insertSelective" parameterType="cn.liyu.hospital.entity.PowerAccount">
+  <insert id="insertSelective" parameterType="cn.liyu.hospital.entity.PowerAccount" useGeneratedKeys="true" keyProperty="id">
     insert into power_account
     <trim prefix="(" suffix=")" suffixOverrides=",">
       <if test="id != null">

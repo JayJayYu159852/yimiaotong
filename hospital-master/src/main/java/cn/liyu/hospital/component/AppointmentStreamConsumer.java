@@ -1,5 +1,7 @@
 package cn.liyu.hospital.component;
 
+import cn.hutool.core.date.DateUtil;
+import cn.liyu.hospital.dto.AppointmentMessageDTO;
 import cn.liyu.hospital.dto.VisitPlanDTO;
 import cn.liyu.hospital.entity.PaymentOrder;
 import cn.liyu.hospital.entity.UserMedicalCard;
@@ -14,6 +16,7 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.connection.stream.*;
@@ -80,6 +83,13 @@ public class AppointmentStreamConsumer implements CommandLineRunner {
 
     @Resource
     private WebSocketServer webSocketServer;
+
+    /**
+     * MQ 生产者（@Profile("rabbitmq") 条件 Bean，未激活时为 null，调用前判空）
+     */
+    @Autowired(required = false)
+    private MqProducerService mqProducerService;
+
     @Override
     public void run(String... args) {
         initStreamGroup();
@@ -249,6 +259,9 @@ public class AppointmentStreamConsumer implements CommandLineRunner {
             // ========== WebSocket 实时推送管理端（对标苍穹外卖来单提醒 type=1） ==========
             pushAppointmentNotice(orderId, cardId, planId);
 
+            // ========== 就诊提醒延迟消息（DLX 死信队列，就诊前一天 20:00 触达） ==========
+            sendVisitReminder(orderId, planId, cardId, accountId, timePeriod);
+
             // ========== 创建支付订单 ==========
             createPaymentOrderForAppointment(accountId, orderId);
 
@@ -291,6 +304,59 @@ public class AppointmentStreamConsumer implements CommandLineRunner {
             webSocketServer.sendAppointmentMessage(1, orderId, content);
         } catch (Exception e) {
             LOGGER.error("WebSocket预约提醒推送失败(不影响下单) -> orderId={}", orderId, e);
+        }
+    }
+
+    /**
+     * 发送就诊提醒延迟消息（DLX 死信队列实现）
+     * <p>
+     * 预约创建成功后投递延迟消息，就诊前一天 20:00 到期自动转入提醒队列触达患者。
+     * MQ 未启用（本地未激活 rabbitmq Profile）或已过提醒时点则跳过；任何异常不影响下单主流程。
+     *
+     * @param orderId    预约编号
+     * @param planId     出诊计划编号
+     * @param cardId     就诊卡编号
+     * @param accountId  账号编号
+     * @param timePeriod 时间段编号
+     */
+    private void sendVisitReminder(Long orderId, Long planId, Long cardId, Long accountId, Integer timePeriod) {
+        if (mqProducerService == null) {
+            // 本地环境未激活 rabbitmq Profile，跳过延迟提醒
+            return;
+        }
+        try {
+            java.util.Optional<UserMedicalCard> cardOpt = userMedicalCardService.getOptional(cardId);
+            java.util.Optional<VisitPlanDTO> planOpt = planService.getOptional(planId);
+            if (!cardOpt.isPresent() || !planOpt.isPresent()) {
+                LOGGER.warn("就诊提醒跳过（就诊卡或出诊计划不存在）-> orderId={}", orderId);
+                return;
+            }
+            UserMedicalCard card = cardOpt.get();
+            VisitPlanDTO plan = planOpt.get();
+
+            // 提醒时点：就诊前一天 20:00；已过时点（如当天挂当天号）不再提醒
+            java.util.Date remindTime = DateUtil.offsetHour(
+                    DateUtil.offsetDay(DateUtil.beginOfDay(plan.getDay()), -1), 20);
+            long delayMs = remindTime.getTime() - System.currentTimeMillis();
+            if (delayMs <= 0) {
+                LOGGER.info("就诊提醒跳过（已过提醒时点）-> orderId={}, visitDate={}", orderId, plan.getDay());
+                return;
+            }
+
+            AppointmentMessageDTO message = AppointmentMessageDTO.builder()
+                    .appointmentId(orderId)
+                    .planId(planId)
+                    .cardId(cardId)
+                    .accountId(accountId)
+                    .timePeriod(timePeriod)
+                    .patientName(card.getName())
+                    .phoneNumber(card.getPhone())
+                    .doctorName(plan.getDoctorName())
+                    .visitDate(plan.getDay())
+                    .build();
+            mqProducerService.sendAppointmentReminder(message, delayMs);
+        } catch (Exception e) {
+            LOGGER.error("就诊提醒发送失败(不影响下单) -> orderId={}", orderId, e);
         }
     }
 

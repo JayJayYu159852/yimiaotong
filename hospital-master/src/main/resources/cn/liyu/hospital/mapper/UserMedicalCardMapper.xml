@@ -103,7 +103,7 @@
       <include refid="Example_Where_Clause" />
     </if>
   </delete>
-  <insert id="insert" parameterType="cn.liyu.hospital.entity.UserMedicalCard">
+  <insert id="insert" parameterType="cn.liyu.hospital.entity.UserMedicalCard" useGeneratedKeys="true" keyProperty="id">
     insert into user_medical_card (id, name, gender, 
       phone, identification_number, birth_date, 
       gmt_create, gmt_modified)
@@ -111,7 +111,7 @@
       #{phone,jdbcType=VARCHAR}, #{identificationNumber,jdbcType=VARCHAR}, #{birthDate,jdbcType=TIMESTAMP}, 
       #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP})
   </insert>
-  <insert id="insertSelective" parameterType="cn.liyu.hospital.entity.UserMedicalCard">
+  <insert id="insertSelective" parameterType="cn.liyu.hospital.entity.UserMedicalCard" useGeneratedKeys="true" keyProperty="id">
     insert into user_medical_card
     <trim prefix="(" suffix=")" suffixOverrides=",">
       <if test="id != null">

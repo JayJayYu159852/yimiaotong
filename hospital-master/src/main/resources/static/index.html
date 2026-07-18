@@ -296,7 +296,7 @@ body{max-width:430px;margin:0 auto;font:15px -apple-system,"PingFang SC","Micros
   async function loadWallet(){
     const r=await ap('GET','payment/wallet/balance');if(r&&r.code===200&&r.data){const w=r.data;$('walletBalance').textContent='¥'+w.balanceYuan;$('walletCard').style.display='block'}else{$('walletCard').style.display='none'}
   }
-  window.doLogout=function(){tk='';u=null;localStorage.removeItem('h_t');$('un').textContent='未登录';$('up').textContent='';$('lb').style.display='block';$('sb').style.display='none';$('sc').style.display='none';$('loBtn').style.display='none';$('swBtn').style.display='block';tm('已退出登录')}
+  window.doLogout=function(){tk='';u=null;localStorage.removeItem('h_t');$('un').textContent='未登录';$('up').textContent='';$('lb').style.display='block';$('sb').style.display='none';$('sc').style.display='none';$('loBtn').style.display='none';$('swBtn').style.display='block';aiConvId=null;aiWelcomed=false;aiBusy=false;$('aiMsgs').innerHTML='';tm('已退出登录')}
   // ===== 健康打卡 =====
   async function loadSignStats(){
     if(!u)return;
