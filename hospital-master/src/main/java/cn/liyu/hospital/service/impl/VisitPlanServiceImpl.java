@@ -124,7 +124,8 @@ public class VisitPlanServiceImpl implements IVisitPlanService {
      */
     @Override
     public Optional<VisitPlanDTO> getOptional(Long id) {
-        return Optional.ofNullable(covert(planMapper.selectByPrimaryKey(id)));
+        // 先判空再转换：计划不存在时返回 empty，避免 covert 内 copyProperties(null) 抛异常
+        return Optional.ofNullable(planMapper.selectByPrimaryKey(id)).map(this::covert);
     }
 
     /**
