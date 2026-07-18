@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.liyu.hospital.mapper.StatisticsMapper">
+
+    <!-- ==================== 概览统计 ==================== -->
+
+    <select id="countTodayAppointments" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM visit_appointment
+        WHERE TO_DAYS(gmt_create) = TO_DAYS(NOW())
+    </select>
+
+    <select id="countTodayRevenue" resultType="java.lang.Long">
+        SELECT COALESCE(SUM(amount), 0)
+        FROM payment_order
+        WHERE status = 2
+          AND TO_DAYS(pay_time) = TO_DAYS(NOW())
+    </select>
+
+    <select id="countTodayNewUsers" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM power_account
+        WHERE TO_DAYS(gmt_create) = TO_DAYS(NOW())
+    </select>
+
+    <select id="countTodayNewCards" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user_medical_card
+        WHERE TO_DAYS(gmt_create) = TO_DAYS(NOW())
+    </select>
+
+    <select id="countTotalAppointments" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM visit_appointment
+    </select>
+
+    <select id="countTotalRevenue" resultType="java.lang.Long">
+        SELECT COALESCE(SUM(amount), 0)
+        FROM payment_order
+        WHERE status = 2
+    </select>
+
+    <select id="countTotalUsers" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM power_account
+    </select>
+
+    <select id="countTotalHospitals" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM hospital_info
+    </select>
+
+    <select id="countTotalDoctors" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM hospital_doctor
+    </select>
+
+    <select id="countTotalPlans" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM visit_plan
+    </select>
+
+    <select id="countTotalRefund" resultType="java.lang.Long">
+        SELECT COALESCE(SUM(refund_amount), 0)
+        FROM payment_order
+        WHERE status = 4
+    </select>
+
+    <!-- ==================== 趋势统计 ==================== -->
+
+    <select id="selectAppointmentTrend" resultType="java.util.Map">
+        SELECT DATE(gmt_create) AS `date`,
+               COUNT(*)          AS `count`
+        FROM visit_appointment
+        WHERE gmt_create &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        GROUP BY DATE(gmt_create)
+        ORDER BY `date`
+    </select>
+
+    <select id="selectRevenueTrend" resultType="java.util.Map">
+        SELECT DATE(pay_time)              AS `date`,
+               COALESCE(SUM(amount), 0)     AS `amount`
+        FROM payment_order
+        WHERE status = 2
+          AND pay_time &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        GROUP BY DATE(pay_time)
+        ORDER BY `date`
+    </select>
+
+    <select id="selectRegisterTrend" resultType="java.util.Map">
+        SELECT DATE(gmt_create) AS `date`,
+               COUNT(*)          AS `count`
+        FROM power_account
+        WHERE gmt_create &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        GROUP BY DATE(gmt_create)
+        ORDER BY `date`
+    </select>
+
+    <!-- ==================== 排行统计 ==================== -->
+
+    <select id="selectDepartmentRank" resultType="java.util.Map">
+        SELECT hs.name           AS `name`,
+               COUNT(va.id)      AS `value`
+        FROM visit_appointment va
+                 JOIN visit_plan vp ON va.plan_id = vp.id
+                 JOIN hospital_doctor hd ON vp.doctor_id = hd.id
+                 JOIN hospital_special hs ON hd.special_id = hs.id
+        GROUP BY hs.id, hs.name
+        ORDER BY `value` DESC
+        LIMIT #{top}
+    </select>
+
+    <select id="selectDoctorRank" resultType="java.util.Map">
+        SELECT hd.name         AS `name`,
+               COUNT(va.id)    AS `value`
+        FROM visit_appointment va
+                 JOIN visit_plan vp ON va.plan_id = vp.id
+                 JOIN hospital_doctor hd ON vp.doctor_id = hd.id
+        GROUP BY hd.id, hd.name
+        ORDER BY `value` DESC
+        LIMIT #{top}
+    </select>
+
+    <!-- ==================== 分布统计 ==================== -->
+
+    <select id="selectStatusDistribution" resultType="java.util.Map">
+        SELECT CASE `status`
+                   WHEN 0 THEN '待就诊'
+                   WHEN 1 THEN '已爽约'
+                   WHEN 2 THEN '已取消'
+                   WHEN 3 THEN '已完成'
+                   ELSE '未知'
+                   END        AS `name`,
+               COUNT(*)        AS `value`
+        FROM visit_appointment
+        GROUP BY `status`
+        ORDER BY `status`
+    </select>
+
+    <select id="selectPeriodDistribution" resultType="java.util.Map">
+        SELECT CASE vp.`time`
+                   WHEN 1 THEN '上午'
+                   WHEN 2 THEN '下午'
+                   ELSE '其他'
+                   END        AS `name`,
+               COUNT(va.id)   AS `value`
+        FROM visit_appointment va
+                 JOIN visit_plan vp ON va.plan_id = vp.id
+        GROUP BY vp.`time`
+        ORDER BY vp.`time`
+    </select>
+
+</mapper>

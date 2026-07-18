@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.liyu.hospital.mapper.PaymentFlowMapper">
+  <resultMap id="BaseResultMap" type="cn.liyu.hospital.entity.PaymentFlow">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="payment_id" jdbcType="BIGINT" property="paymentId" />
+    <result column="payment_no" jdbcType="VARCHAR" property="paymentNo" />
+    <result column="account_id" jdbcType="BIGINT" property="accountId" />
+    <result column="amount" jdbcType="BIGINT" property="amount" />
+    <result column="balance_before" jdbcType="BIGINT" property="balanceBefore" />
+    <result column="balance_after" jdbcType="BIGINT" property="balanceAfter" />
+    <result column="flow_type" jdbcType="INTEGER" property="flowType" />
+    <result column="flow_status" jdbcType="INTEGER" property="flowStatus" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, payment_id, payment_no, account_id, amount, balance_before, balance_after,
+    flow_type, flow_status, remark, gmt_create
+  </sql>
+
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from payment_flow
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+
+  <select id="selectByAccountId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from payment_flow
+    where account_id = #{accountId,jdbcType=BIGINT}
+    order by gmt_create desc
+  </select>
+
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from payment_flow where id = #{id,jdbcType=BIGINT}
+  </delete>
+
+  <insert id="insert" parameterType="cn.liyu.hospital.entity.PaymentFlow" useGeneratedKeys="true" keyProperty="id">
+    insert into payment_flow (payment_id, payment_no, account_id, amount, balance_before,
+      balance_after, flow_type, flow_status, remark, gmt_create)
+    values (#{paymentId,jdbcType=BIGINT}, #{paymentNo,jdbcType=VARCHAR}, #{accountId,jdbcType=BIGINT},
+      #{amount,jdbcType=BIGINT}, #{balanceBefore,jdbcType=BIGINT}, #{balanceAfter,jdbcType=BIGINT},
+      #{flowType,jdbcType=INTEGER}, #{flowStatus,jdbcType=INTEGER}, #{remark,jdbcType=VARCHAR},
+      #{gmtCreate,jdbcType=TIMESTAMP})
+  </insert>
+
+  <insert id="insertSelective" parameterType="cn.liyu.hospital.entity.PaymentFlow" useGeneratedKeys="true" keyProperty="id">
+    insert into payment_flow
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="paymentId != null">payment_id,</if>
+      <if test="paymentNo != null">payment_no,</if>
+      <if test="accountId != null">account_id,</if>
+      <if test="amount != null">amount,</if>
+      <if test="balanceBefore != null">balance_before,</if>
+      <if test="balanceAfter != null">balance_after,</if>
+      <if test="flowType != null">flow_type,</if>
+      <if test="flowStatus != null">flow_status,</if>
+      <if test="remark != null">remark,</if>
+      <if test="gmtCreate != null">gmt_create,</if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="paymentId != null">#{paymentId,jdbcType=BIGINT},</if>
+      <if test="paymentNo != null">#{paymentNo,jdbcType=VARCHAR},</if>
+      <if test="accountId != null">#{accountId,jdbcType=BIGINT},</if>
+      <if test="amount != null">#{amount,jdbcType=BIGINT},</if>
+      <if test="balanceBefore != null">#{balanceBefore,jdbcType=BIGINT},</if>
+      <if test="balanceAfter != null">#{balanceAfter,jdbcType=BIGINT},</if>
+      <if test="flowType != null">#{flowType,jdbcType=INTEGER},</if>
+      <if test="flowStatus != null">#{flowStatus,jdbcType=INTEGER},</if>
+      <if test="remark != null">#{remark,jdbcType=VARCHAR},</if>
+      <if test="gmtCreate != null">#{gmtCreate,jdbcType=TIMESTAMP},</if>
+    </trim>
+  </insert>
+
+  <update id="updateByPrimaryKeySelective" parameterType="cn.liyu.hospital.entity.PaymentFlow">
+    update payment_flow
+    <set>
+      <if test="paymentId != null">payment_id = #{paymentId,jdbcType=BIGINT},</if>
+      <if test="paymentNo != null">payment_no = #{paymentNo,jdbcType=VARCHAR},</if>
+      <if test="accountId != null">account_id = #{accountId,jdbcType=BIGINT},</if>
+      <if test="amount != null">amount = #{amount,jdbcType=BIGINT},</if>
+      <if test="balanceBefore != null">balance_before = #{balanceBefore,jdbcType=BIGINT},</if>
+      <if test="balanceAfter != null">balance_after = #{balanceAfter,jdbcType=BIGINT},</if>
+      <if test="flowType != null">flow_type = #{flowType,jdbcType=INTEGER},</if>
+      <if test="flowStatus != null">flow_status = #{flowStatus,jdbcType=INTEGER},</if>
+      <if test="remark != null">remark = #{remark,jdbcType=VARCHAR},</if>
+      <if test="gmtCreate != null">gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},</if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+
+  <update id="updateByPrimaryKey" parameterType="cn.liyu.hospital.entity.PaymentFlow">
+    update payment_flow
+    set payment_id = #{paymentId,jdbcType=BIGINT},
+        payment_no = #{paymentNo,jdbcType=VARCHAR},
+        account_id = #{accountId,jdbcType=BIGINT},
+        amount = #{amount,jdbcType=BIGINT},
+        balance_before = #{balanceBefore,jdbcType=BIGINT},
+        balance_after = #{balanceAfter,jdbcType=BIGINT},
+        flow_type = #{flowType,jdbcType=INTEGER},
+        flow_status = #{flowStatus,jdbcType=INTEGER},
+        remark = #{remark,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+</mapper>

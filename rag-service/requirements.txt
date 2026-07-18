@@ -1,0 +1,33 @@
+# ==================== Web 框架 ====================
+fastapi>=0.115
+uvicorn>=0.30
+pydantic-settings>=2.4
+python-multipart>=0.0.9
+
+# ==================== 鉴权 ====================
+PyJWT>=2.9
+
+# ==================== 数据访问 ====================
+SQLAlchemy>=2.0
+PyMySQL>=1.1
+redis>=5.0
+
+# ==================== RAG（LangChain 生态） ====================
+langchain>=1.0
+langchain-community>=0.3
+langchain-openai>=0.3
+langchain-chroma>=0.2
+langchain-text-splitters>=0.3
+chromadb>=1.0
+
+# ==================== 文档解析 ====================
+pypdf>=5.0
+python-docx>=1.1
+
+# ==================== 中文检索 ====================
+jieba>=0.42
+rank_bm25>=0.2
+
+# ==================== 工具 ====================
+python-dotenv>=1.0
+requests>=2.32

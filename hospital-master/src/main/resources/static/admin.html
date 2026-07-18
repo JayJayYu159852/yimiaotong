@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>医秒通 · 管理端</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+:root{--bg:#f0f2f5;--card:#fff;--primary:#1677ff;--primary-hover:#4096ff;--danger:#ff4d4f;--danger-hover:#ff7875;--success:#52c41a;--warning:#faad14;--text:#1f1f1f;--text2:#666;--text3:#999;--border:#e8e8e8;--shadow:0 2px 8px rgba(0,0,0,.08);--radius:8px;--sidebar-w:240px;--header-h:56px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--primary);text-decoration:none}
+input,select,textarea{font:inherit;padding:8px 12px;border:1px solid var(--border);border-radius:6px;outline:none;width:100%;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(22,119,255,.1)}
+textarea{resize:vertical;min-height:80px}
+button{cursor:pointer;font:inherit;border:none;border-radius:6px;padding:8px 20px;transition:all .2s}
+.btn-p{background:var(--primary);color:#fff}.btn-p:hover{background:var(--primary-hover)}
+.btn-d{background:var(--danger);color:#fff}.btn-d:hover{background:var(--danger-hover)}
+.btn-o{background:#fff;color:var(--text);border:1px solid var(--border)}.btn-o:hover{border-color:var(--primary);color:var(--primary)}
+.btn-s{background:var(--success);color:#fff}.btn-w{background:var(--warning);color:#fff}
+.btn-sm{padding:4px 12px;font-size:13px}.btn-xs{padding:2px 8px;font-size:12px}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+th{background:#fafafa;font-weight:600;color:var(--text2);font-size:13px;white-space:nowrap}
+tr:hover td{background:#fafafa}
+.card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);margin-bottom:16px}
+.card-title{font-size:16px;font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.form-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px 16px;margin-bottom:16px}
+.form-col{display:flex;flex-direction:column;gap:4px}
+.form-col label{font-size:13px;color:var(--text2);font-weight:500}
+.pagination{display:flex;justify-content:center;align-items:center;gap:4px;margin-top:16px}
+.pagination button{padding:6px 12px;font-size:13px;border:1px solid var(--border);background:#fff;border-radius:4px}
+.pagination button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pagination button:disabled{opacity:.5;cursor:not-allowed}
+.pagination span{font-size:13px;color:var(--text2);margin:0 8px}
+.tag{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:500}
+.tag-on{background:#e6f7ff;color:var(--primary)}.tag-off{background:#fff2f0;color:var(--danger)}
+.tag-s{background:#f6ffed;color:var(--success)}.tag-w{background:#fffbe6;color:#d48806}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--card);border-radius:12px;padding:24px;max-width:700px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.modal h3{font-size:18px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:9999;padding:10px 24px;border-radius:6px;font-size:14px;animation:toastIn .3s;pointer-events:none}
+.toast-ok{background:#f6ffed;color:var(--success);border:1px solid #b7eb8f}
+.toast-err{background:#fff2f0;color:var(--danger);border:1px solid #ffccc7}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.ws-notify-wrap{position:fixed;top:70px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 100px);overflow-y:auto}
+.ws-notify{width:320px;background:var(--card);border-radius:var(--radius);box-shadow:0 4px 16px rgba(0,0,0,.15);padding:14px 16px;border-left:4px solid var(--primary);animation:wsNotifyIn .3s}
+.ws-notify.ws-cancel{border-left-color:var(--warning)}
+.ws-notify .ws-title{font-weight:600;font-size:14px;margin-bottom:4px;display:flex;justify-content:space-between}
+.ws-notify .ws-content{font-size:13px;color:var(--text2)}
+@keyframes wsNotifyIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.search-bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px}
+.search-bar .field{display:flex;flex-direction:column;gap:4px}
+.search-bar .field label{font-size:13px;color:var(--text2)}
+.search-bar .field input,.search-bar .field select{padding:6px 12px;width:auto;min-width:160px}
+.tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border)}
+.tabs button{padding:10px 24px;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:14px;color:var(--text2);border-radius:0}
+.tabs button.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:20px}
+.stat-card{background:var(--card);padding:20px;border-radius:var(--radius);box-shadow:var(--shadow);text-align:center}
+.stat-card .num{font-size:32px;font-weight:700;color:var(--primary)}
+.stat-card .label{font-size:13px;color:var(--text2);margin-top:4px}
+.empty{text-align:center;padding:40px;color:var(--text3);font-size:15px}
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1677ff 0%,#69b1ff 100%)}
+.login-box{background:#fff;border-radius:16px;padding:40px;width:400px;box-shadow:0 8px 40px rgba(0,0,0,.12)}
+.login-box h1{text-align:center;font-size:28px;margin-bottom:4px;color:var(--primary)}
+.login-box .sub{text-align:center;color:var(--text3);margin-bottom:32px;font-size:14px}
+.login-box .form-group{margin-bottom:20px}
+.login-box .form-group label{display:block;margin-bottom:6px;font-weight:500;font-size:14px}
+.login-box .form-group input{padding:10px 14px;font-size:15px}
+.login-box button{width:100%;padding:12px;font-size:16px;font-weight:600;margin-top:8px}
+.login-err{color:var(--danger);text-align:center;font-size:13px;margin-top:12px;display:none}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar-w);background:#001529;color:#fff;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;transition:transform .3s}
+.sidebar-logo{display:flex;align-items:center;gap:10px;padding:16px 20px;font-size:18px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.1);color:#fff}
+.sidebar-logo .icon{font-size:24px}
+.sidebar .user{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px}
+.sidebar .user .avatar{width:36px;height:36px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:16px}
+.sidebar .user .name{font-size:14px;font-weight:500}
+.sidebar .user .role{font-size:12px;color:rgba(255,255,255,.45)}
+.sidebar nav{margin-top:8px}
+.sidebar .nav-group{margin-bottom:4px}
+.sidebar .nav-group-title{padding:12px 20px 6px;font-size:11px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1px}
+.sidebar .nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:14px;color:rgba(255,255,255,.65);cursor:pointer;transition:all .2s;border-left:3px solid transparent}
+.sidebar .nav-item:hover{color:#fff;background:rgba(255,255,255,.05)}
+.sidebar .nav-item.active{color:#fff;background:var(--primary);border-left-color:#fff}
+.sidebar .nav-item .ni{font-size:16px;width:20px;text-align:center}
+.main{margin-left:var(--sidebar-w);flex:1;min-width:0}
+.header{height:var(--header-h);background:var(--card);display:flex;align-items:center;justify-content:space-between;padding:0 24px;box-shadow:var(--shadow);position:sticky;top:0;z-index:50}
+.header .bread{font-size:15px;font-weight:600}
+.header .actions{display:flex;align-items:center;gap:12px}
+.page{padding:20px 24px}
+.page-title{font-size:20px;font-weight:700;margin-bottom:20px;color:var(--text)}
+.hidden{display:none!important}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.form-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="loginPage" class="login-wrap">
+<div class="login-box">
+<h1>🏥 医秒通</h1><div class="sub">智慧医院管理平台</div>
+<div class="form-group"><label>账号</label><input id="loginName" placeholder="请输入管理员账号" autocomplete="off"></div>
+<div class="form-group"><label>密码</label><input id="loginPwd" type="password" placeholder="请输入密码" autocomplete="off"></div>
+<button class="btn-p" onclick="doLogin()">登 录</button>
+<div id="loginErr" class="login-err"></div>
+</div></div>
+<div id="mainPage" class="layout hidden">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-logo"><span class="icon">🏥</span> 医秒通管理</div>
+<div class="user"><div class="avatar">👤</div><div><div class="name" id="adminName">管理员</div><div class="role">系统管理员</div></div></div>
+<nav id="sideNav"></nav>
+</aside>
+<div class="main">
+<header class="header"><div class="bread" id="breadcrumb">🏠 首页</div><div class="actions"><button class="btn-o btn-sm" onclick="showPwdModal()">🔑 改密</button><button class="btn-d btn-sm" onclick="doLogout()">退出</button></div></header>
+<div class="page" id="pageContent"></div>
+</div></div>
+<div id="modalContainer"></div>
+<div id="toast" class="toast hidden"></div>
+<div id="wsNotifyContainer" class="ws-notify-wrap"></div>
+<script>
+// ==================== GLOBAL STATE ====================
+const BASE = '/hospital';
+let token = '';
+let currentPage = 'dashboard';
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+const api = (url, opts = {}) => {
+  const headers = { 'Content-Type': 'application/json', ...opts.headers };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  return fetch(BASE + url, { ...opts, headers }).then(r => {
+    if (r.status === 401 || r.status === 403) { doLogout(); throw new Error('登录已过期'); }
+    if (!r.ok) throw new Error('请求失败: ' + r.status);
+    return r.json();
+  });
+};
+
+function toast(msg, type = 'ok') {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast toast-' + type;
+  setTimeout(() => t.classList.add('hidden'), 2500);
+}
+
+function showModal(title, bodyHtml, onSave, opts = {}) {
+  const container = $('#modalContainer');
+  container.innerHTML = '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal" style="' + (opts.wide ? 'max-width:900px' : '') + '"><h3>' + title + '</h3><div class="modal-body">' + bodyHtml + '</div><div class="btn-group" style="justify-content:flex-end;margin-top:20px"><button class="btn-o" onclick="closeModal()">取消</button>' + (onSave ? '<button class="btn-p" id="modalSaveBtn">保存</button>' : '') + '</div></div></div>';
+  if (onSave) $('#modalSaveBtn').onclick = onSave;
+}
+
+function closeModal() { $('#modalContainer').innerHTML = ''; }
+
+function renderPagination(total, pageNum, pageSize, fnName) {
+  const pages = Math.ceil(total / pageSize) || 1;
+  if (pages <= 1) return '';
+  let h = '<div class="pagination">';
+  h += '<button ' + (pageNum <= 1 ? 'disabled' : '') + ' onclick="event.stopPropagation();' + fnName + '(' + (pageNum - 1) + ')">‹</button>';
+  for (let i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || Math.abs(i - pageNum) <= 2) {
+      h += '<button class="' + (i === pageNum ? 'active' : '') + '" onclick="event.stopPropagation();' + fnName + '(' + i + ')">' + i + '</button>';
+    } else if (i === 2 || i === pages - 1) {
+      h += '<span>…</span>';
+    }
+  }
+  h += '<button ' + (pageNum >= pages ? 'disabled' : '') + ' onclick="event.stopPropagation();' + fnName + '(' + (pageNum + 1) + ')">›</button>';
+  h += '<span>共 ' + total + ' 条 / ' + pages + ' 页</span></div>';
+  return h;
+}
+
+// ==================== AUTH ====================
+function doLogin() {
+  const name = $('#loginName').value.trim();
+  const pwd = $('#loginPwd').value.trim();
+  if (!name || !pwd) { showLoginErr('请输入账号和密码'); return; }
+  fetch(BASE + '/power/account/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, password: pwd }) })
+    .then(r => r.json())
+    .then(res => {
+      if (res.code === 200) {
+        token = res.data;
+        localStorage.setItem('admin_token', token);
+        showMain();
+      } else {
+        showLoginErr(res.message || '登录失败');
+      }
+    })
+    .catch(e => showLoginErr('网络错误: ' + e.message));
+}
+
+function showLoginErr(msg) {
+  const el = $('#loginErr');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function doLogout() {
+  closeWebSocket();
+  if (token) api('/power/account/logout').catch(() => {});
+  token = '';
+  localStorage.removeItem('admin_token');
+  $('#loginPage').classList.remove('hidden');
+  $('#mainPage').classList.add('hidden');
+  $('#loginName').value = '';
+  $('#loginPwd').value = '';
+}
+
+function showPwdModal() {
+  showModal('修改密码',
+    '<div class="form-col"><label>账号ID</label><input id="pwdAccountId" type="number" placeholder="账号ID"></div><div class="form-col" style="margin-top:12px"><label>旧密码</label><input id="pwdOld" type="password"></div><div class="form-col" style="margin-top:12px"><label>新密码</label><input id="pwdNew" type="password"></div>',
+    () => {
+      const data = { accountId: parseInt($('#pwdAccountId').value), password: $('#pwdOld').value, newPassword: $('#pwdNew').value };
+      api('/power/account/password', { method: 'PUT', body: JSON.stringify(data) })
+        .then(res => { if (res.code === 200) { toast('密码修改成功'); closeModal(); } else toast(res.message, 'err'); })
+        .catch(e => toast(e.message, 'err'));
+    });
+}
+
+// ==================== SIDEBAR & NAV ====================
+function showMain() {
+  $('#loginPage').classList.add('hidden');
+  $('#mainPage').classList.remove('hidden');
+  api('/power/account/info').then(res => {
+    if (res.code === 200 && res.data) $('#adminName').textContent = res.data.userName || '管理员';
+  }).catch(() => {});
+  buildSidebar();
+  navigate('statistics');
+  connectWebSocket();
+}
+
+function buildSidebar() {
+  const nav = [
+    { g: '📊 数据统计', items: [
+      { id: 'statistics', icon: '📊', label: '数据统计' },
+    ]},
+    { g: '🏥 医院管理', items: [
+      { id: 'hospitals', icon: '🏥', label: '医院信息' },
+      { id: 'specials', icon: '📋', label: '专科管理' },
+      { id: 'doctors', icon: '👨‍⚕️', label: '医生管理' },
+      { id: 'plans', icon: '📅', label: '出诊计划' },
+    ]},
+    { g: '📋 业务管理', items: [
+      { id: 'appointments', icon: '📝', label: '预约管理' },
+      { id: 'payments', icon: '💰', label: '支付管理' },
+      { id: 'cases', icon: '📄', label: '病例管理' },
+      { id: 'notices', icon: '📢', label: '健康资讯' },
+      { id: 'credit', icon: '🛡️', label: '信用管理' },
+    ]},
+    { g: '👥 用户管理', items: [
+      { id: 'users', icon: '👤', label: '用户信息' },
+      { id: 'cards', icon: '💳', label: '就诊卡' },
+    ]},
+    { g: '🔐 权限管理', items: [
+      { id: 'accounts', icon: '🔑', label: '账号管理' },
+      { id: 'roles', icon: '👥', label: '角色管理' },
+      { id: 'resources', icon: '🔗', label: '资源管理' },
+      { id: 'categories', icon: '📂', label: '资源分类' },
+    ]},
+    { g: '🤖 AI 智能', items: [
+      { id: 'kb', icon: '📚', label: '知识库管理' },
+    ]},
+    { g: '📊 系统管理', items: [
+      { id: 'logs', icon: '📊', label: '系统日志' },
+      // 文件上传已整合到「健康资讯」中，不再作为独立页面
+    ]},
+  ];
+  let h = '';
+  nav.forEach(g => {
+    h += '<div class="nav-group"><div class="nav-group-title">' + g.g + '</div>';
+    g.items.forEach(it => {
+      h += '<div class="nav-item" data-page="' + it.id + '" onclick="navigate(\'' + it.id + '\')"><span class="ni">' + it.icon + '</span> ' + it.label + '</div>';
+    });
+    h += '</div>';
+  });
+  $('#sideNav').innerHTML = h;
+}
+
+function navigate(pageId) {
+  currentPage = pageId;
+  $$('.nav-item').forEach(el => el.classList.remove('active'));
+  const item = $('.nav-item[data-page="' + pageId + '"]');
+  if (item) item.classList.add('active');
+  const labels = {
+    statistics:'📊 数据统计', dashboard:'🏠 首页', hospitals:'🏥 医院信息', specials:'📋 专科管理',
+    clinics:'🏠 诊室管理', doctors:'👨‍⚕️ 医生管理',
+    plans:'📅 出诊计划', appointments:'📝 预约管理', payments:'💰 支付管理', cases:'📄 病例管理',
+    notices:'📢 健康资讯', credit:'🛡️ 信用管理', users:'👤 用户信息',
+    cards:'💳 就诊卡', accounts:'🔑 账号管理', roles:'👥 角色管理',
+    resources:'🔗 资源管理', categories:'📂 资源分类',
+    logs:'📊 系统日志', kb:'📚 知识库管理'
+  };
+  $('#breadcrumb').textContent = labels[pageId] || pageId;
+  const renderers = { statistics, dashboard, hospitals, specials, clinics, doctors, plans,
+    appointments, payments, cases, notices, credit, users, cards, accounts, roles, resources, categories, logs, kb };
+  if (renderers[pageId]) renderers[pageId]();
+}
+
+// ==================== STATISTICS ====================
+// ECharts instances for resize
+let _chartInstances = [];
+
+function statistics(days) {
+  days = days || 7;
+  const top = 10;
+  $('#pageContent').innerHTML = '<div class="page-title">📊 数据统计</div>'
+    + '<div class="card" style="padding:16px;margin-bottom:16px">'
+    + '<div class="stat-grid" style="grid-template-columns:repeat(6,1fr)" id="statCards">'
+    + '<div class="stat-card"><div class="num" id="ovTodayAppt">-</div><div class="label">今日挂号</div></div>'
+    + '<div class="stat-card"><div class="num" id="ovTodayRev">-</div><div class="label">今日营收</div></div>'
+    + '<div class="stat-card"><div class="num" id="ovTodayUser">-</div><div class="label">今日新增用户</div></div>'
+    + '<div class="stat-card"><div class="num" id="ovTotalAppt">-</div><div class="label">累计挂号</div></div>'
+    + '<div class="stat-card"><div class="num" id="ovTotalRev">-</div><div class="label">累计营收</div></div>'
+    + '<div class="stat-card"><div class="num" id="ovTotalUser">-</div><div class="label">累计用户</div></div>'
+    + '</div></div>'
+    + '<div class="card" style="padding:12px 16px;margin-bottom:16px">'
+    + '<div style="display:flex;align-items:center;gap:12px">'
+    + '<span style="font-size:14px;font-weight:600;color:var(--text2)">时间范围：</span>'
+    + '<button class="btn-sm ' + (days===7?'btn-p':'btn-o') + '" onclick="statistics(7)" id="btn7d">近 7 天</button>'
+    + '<button class="btn-sm ' + (days===30?'btn-p':'btn-o') + '" onclick="statistics(30)" id="btn30d">近 30 天</button>'
+    + '<button class="btn-s btn-sm" style="margin-left:auto" onclick="exportStatistics()">📊 导出报表</button>'
+    + '</div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'
+    + '<div class="card"><div class="card-title">📈 挂号量趋势</div><div id="chartApptTrend" style="height:280px"></div></div>'
+    + '<div class="card"><div class="card-title">🥧 预约状态分布</div><div id="chartStatusDist" style="height:280px"></div></div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'
+    + '<div class="card"><div class="card-title">💰 营收趋势</div><div id="chartRevenueTrend" style="height:280px"></div></div>'
+    + '<div class="card"><div class="card-title">🏆 科室挂号排行</div><div id="chartDeptRank" style="height:280px"></div></div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'
+    + '<div class="card"><div class="card-title">👨‍⚕️ 医生热度 Top 10</div><div id="chartDocRank" style="height:300px"></div></div>'
+    + '<div class="card"><div class="card-title">🕐 上下午时段分布</div><div id="chartPeriodDist" style="height:300px"></div></div>'
+    + '</div>';
+
+  // Dispose old chart instances
+  _chartInstances.forEach(c => { try { c.dispose(); } catch(e) {} });
+  _chartInstances = [];
+
+  // Fetch all stats data
+  api('/admin/statistics/all?days=' + days + '&top=' + top).then(res => {
+    if (res.code === 200 && res.data) {
+      const d = res.data;
+      renderStatCards(d.overview);
+      renderApptTrend(d.appointmentTrend || []);
+      renderStatusDist(d.statusDistribution || []);
+      renderRevenueTrend(d.revenueTrend || []);
+      renderDeptRank(d.departmentRank || []);
+      renderDocRank(d.doctorRank || []);
+      renderPeriodDist(d.periodDistribution || []);
+    } else {
+      toast('获取统计数据失败', 'err');
+    }
+  }).catch(e => toast('统计数据加载异常: ' + e.message, 'err'));
+}
+
+function renderStatCards(ov) {
+  if (!ov) return;
+  $('#ovTodayAppt').textContent = ov.todayAppointments || 0;
+  $('#ovTodayRev').textContent = '¥' + (ov.todayRevenueYuan || '0.00');
+  $('#ovTodayUser').textContent = ov.todayNewUsers || 0;
+  $('#ovTotalAppt').textContent = ov.totalAppointments || 0;
+  $('#ovTotalRev').textContent = '¥' + (ov.totalRevenueYuan || '0.00');
+  $('#ovTotalUser').textContent = ov.totalUsers || 0;
+}
+
+function renderApptTrend(data) {
+  const el = $('#chartApptTrend');
+  if (!el) return;
+  const chart = echarts.init(el);
+  _chartInstances.push(chart);
+  if (!data.length) {
+    chart.setOption({ title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#999', fontSize: 14 } } });
+    return;
+  }
+  chart.setOption({
+    tooltip: { trigger: 'axis', formatter: function(p) { return p[0].name + '<br/>挂号量：<b>' + p[0].value + '</b>'; } },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: { type: 'category', data: data.map(d => d.date.substring(5)), boundaryGap: false, axisLabel: { fontSize: 11 } },
+    yAxis: { type: 'value', minInterval: 1 },
+    series: [{
+      type: 'line', smooth: true, data: data.map(d => d.count),
+      lineStyle: { color: '#1677ff', width: 2 },
+      areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [{ offset: 0, color: 'rgba(22,119,255,0.25)' }, { offset: 1, color: 'rgba(22,119,255,0.02)' }] } },
+      itemStyle: { color: '#1677ff' },
+    }]
+  });
+}
+
+function renderStatusDist(data) {
+  const el = $('#chartStatusDist');
+  if (!el) return;
+  const chart = echarts.init(el);
+  _chartInstances.push(chart);
+  if (!data.length) {
+    chart.setOption({ title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#999', fontSize: 14 } } });
+    return;
+  }
+  const colors = ['#1677ff', '#ff4d4f', '#faad14', '#52c41a'];
+  chart.setOption({
+    tooltip: { trigger: 'item', formatter: '{b}: {c} 次 ({d}%)' },
+    legend: { bottom: 0, textStyle: { fontSize: 12 } },
+    series: [{
+      type: 'pie', radius: ['40%', '65%'], center: ['50%', '45%'],
+      data: data.map((d, i) => ({ name: d.name, value: d.value, itemStyle: { color: colors[i % colors.length] } })),
+      label: { show: true, formatter: '{b}', fontSize: 12 },
+      emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.2)' } }
+    }]
+  });
+}
+
+function renderRevenueTrend(data) {
+  const el = $('#chartRevenueTrend');
+  if (!el) return;
+  const chart = echarts.init(el);
+  _chartInstances.push(chart);
+  if (!data.length) {
+    chart.setOption({ title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#999', fontSize: 14 } } });
+    return;
+  }
+  chart.setOption({
+    tooltip: { trigger: 'axis', formatter: function(p) { return p[0].name + '<br/>营收：<b>¥' + p[0].value + '</b>'; } },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: { type: 'category', data: data.map(d => d.date.substring(5)), boundaryGap: false, axisLabel: { fontSize: 11 } },
+    yAxis: { type: 'value', axisLabel: { formatter: '¥{value}' } },
+    series: [{
+      type: 'line', smooth: true, data: data.map(d => d.amountYuan),
+      lineStyle: { color: '#52c41a', width: 2 },
+      areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [{ offset: 0, color: 'rgba(82,196,26,0.25)' }, { offset: 1, color: 'rgba(82,196,26,0.02)' }] } },
+      itemStyle: { color: '#52c41a' },
+    }]
+  });
+}
+
+function renderDeptRank(data) {
+  const el = $('#chartDeptRank');
+  if (!el) return;
+  const chart = echarts.init(el);
+  _chartInstances.push(chart);
+  if (!data.length) {
+    chart.setOption({ title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#999', fontSize: 14 } } });
+    return;
+  }
+  const names = data.map(d => d.name).reverse();
+  const values = data.map(d => d.value).reverse();
+  chart.setOption({
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function(p) { return p[0].name + '<br/>挂号量：<b>' + p[0].value + '</b>'; } },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: { type: 'value', minInterval: 1 },
+    yAxis: { type: 'category', data: names, axisLabel: { fontSize: 11, width: 60, overflow: 'truncate' } },
+    series: [{
+      type: 'bar', data: values.map((v, i) => ({ value: v, itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#1677ff' }, { offset: 1, color: '#69b1ff' }]) } })),
+      barMaxWidth: 24
+    }]
+  });
+}
+
+function renderDocRank(data) {
+  const el = $('#chartDocRank');
+  if (!el) return;
+  const chart = echarts.init(el);
+  _chartInstances.push(chart);
+  if (!data.length) {
+    chart.setOption({ title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#999', fontSize: 14 } } });
+    return;
+  }
+  const names = data.map(d => d.name).reverse();
+  const values = data.map(d => d.value).reverse();
+  chart.setOption({
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function(p) { return p[0].name + '<br/>挂号量：<b>' + p[0].value + '</b>'; } },
+    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    xAxis: { type: 'value', minInterval: 1 },
+    yAxis: { type: 'category', data: names, axisLabel: { fontSize: 11, width: 60, overflow: 'truncate' } },
+    series: [{
+      type: 'bar', data: values.map((v, i) => ({ value: v, itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#722ed1' }, { offset: 1, color: '#b37feb' }]) } })),
+      barMaxWidth: 24
+    }]
+  });
+}
+
+function renderPeriodDist(data) {
+  const el = $('#chartPeriodDist');
+  if (!el) return;
+  const chart = echarts.init(el);
+  _chartInstances.push(chart);
+  if (!data.length) {
+    chart.setOption({ title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#999', fontSize: 14 } } });
+    return;
+  }
+  chart.setOption({
+    tooltip: { trigger: 'item', formatter: '{b}: {c} 次 ({d}%)' },
+    legend: { bottom: 0, textStyle: { fontSize: 12 } },
+    series: [{
+      type: 'pie', radius: ['40%', '65%'], center: ['50%', '45%'],
+      data: data.map((d, i) => ({ name: d.name, value: d.value, itemStyle: { color: i === 0 ? '#faad14' : '#1677ff' } })),
+      label: { show: true, formatter: '{b}', fontSize: 12 },
+      emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.2)' } }
+    }]
+  });
+}
+
+// Keep dashboard() as an alias for statistics() for backward compatibility
+function dashboard() { statistics(7); }
+
+// 导出统计报表（携带 token 下载 Excel）
+function exportStatistics() {
+  fetch(BASE + '/admin/statistics/export', { headers: token ? { 'Authorization': 'Bearer ' + token } : {} })
+    .then(r => {
+      if (!r.ok) throw new Error('导出失败: ' + r.status);
+      return r.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '数据统计报表.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('报表导出成功');
+    })
+    .catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 1. 医院管理 ====================
+function hospitals(pageNum) {
+  pageNum = pageNum || 1;
+  let nameFilter = (window._hfVal || '');
+  const params = new URLSearchParams({ pageNum: pageNum, pageSize: 10 });
+  if (nameFilter) params.append('name', nameFilter);
+  api('/hospital/info/list?' + params).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<div class="page-title">🏥 医院管理</div><div class="card"><div class="card-title">医院列表<div class="btn-group"><button class="btn-p btn-sm" onclick="showHospitalModal()">+ 添加医院</button></div></div><div class="search-bar"><div class="field"><label>医院名称</label><input id="hfInput" placeholder="搜索..." value="' + (nameFilter||'') + '"></div><button class="btn-p btn-sm" onclick="window._hfVal=$(\'#hfInput\').value;hospitals(1)">🔍</button><button class="btn-o btn-sm" onclick="window._hfVal=\'\';hospitals(1)">重置</button></div><table><thead><tr><th>ID</th><th>名称</th><th>电话</th><th>地址</th><th>图片</th><th>操作</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(hos => {
+      h += '<tr><td>' + hos.id + '</td><td><b>' + (hos.name||'') + '</b></td><td>' + (hos.phone||'') + '</td><td>' + (hos.address||'') + '</td><td>' + (hos.picture ? '<img src="' + hos.picture + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px">' : '-') + '</td><td><div class="btn-group"><button class="btn-o btn-xs" onclick="showHospitalModal(' + hos.id + ')">✏️</button><button class="btn-o btn-xs" onclick="showHospitalRelModal(' + hos.id + ')">🔗专科</button><button class="btn-d btn-xs" onclick="deleteHospital(' + hos.id + ')">🗑️</button></div></td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'hospitals') + '</div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function showHospitalModal(id) {
+  const isEdit = !!id;
+  function render(d) {
+    d = d || {};
+    showModal(isEdit ? '编辑医院' : '添加医院',
+      '<div class="form-row"><div class="form-col"><label>名称 *</label><input id="fHosName" value="' + (d.name||'') + '"></div><div class="form-col"><label>电话 *</label><input id="fHosPhone" value="' + (d.phone||'') + '"></div><div class="form-col"><label>地址 *</label><input id="fHosAddress" value="' + (d.address||'') + '"></div><div class="form-col"><label>简介</label><textarea id="fHosDesc">' + (d.description||'') + '</textarea></div><div class="form-col"><label>图片</label><div style="display:flex;gap:8px"><input id="fHosPic" placeholder="图片URL（可选）" style="flex:1" value="' + (d.picture||'') + '"><input type="file" id="hosUploadFile" accept="image/*" style="display:none" onchange="doPictureUpload(\'hosUploadFile\',\'fHosPic\',\'hosUploadStatus\')"><button class="btn-o btn-sm" onclick="$(\'#hosUploadFile\').click()" title="上传图片">📷 上传</button></div><div id="hosUploadStatus" style="font-size:12px;color:var(--text3);margin-top:4px"></div></div><div class="form-col"><label>纬度</label><input id="fHosLat" type="number" step="any" value="' + (d.latitude||'') + '"></div><div class="form-col"><label>经度</label><input id="fHosLng" type="number" step="any" value="' + (d.longitude||'') + '"></div></div>',
+      () => {
+        const body = { name: $('#fHosName').value, phone: $('#fHosPhone').value, address: $('#fHosAddress').value, description: $('#fHosDesc').value, picture: $('#fHosPic').value || null, latitude: $('#fHosLat').value ? parseFloat($('#fHosLat').value) : null, longitude: $('#fHosLng').value ? parseFloat($('#fHosLng').value) : null };
+        const method = isEdit ? 'PUT' : 'POST';
+        const url = isEdit ? '/hospital/info/' + id : '/hospital/info';
+        api(url, { method: method, body: JSON.stringify(body) })
+          .then(res => { if (res.code === 200) { toast(isEdit ? '更新成功' : '添加成功'); closeModal(); hospitals(); } else toast(res.message, 'err'); })
+          .catch(e => toast(e.message, 'err'));
+      });
+  }
+  if (isEdit) {
+    api('/hospital/info/' + id).then(r => { if (r.code === 200) render(r.data); }).catch(() => render({}));
+  } else render({});
+}
+
+function showHospitalRelModal(hospitalId) {
+  const listApi = '/hospital/special/list/' + hospitalId + '?pageNum=1&pageSize=200';
+  const allApi = '/hospital/special/list?pageNum=1&pageSize=200';
+  showModal('管理医院关联专科', '<div id="relContent">加载中...</div>', null, { wide: true });
+  Promise.all([api(listApi).catch(() => ({ data: { list: [] } })), api(allApi).catch(() => ({ data: { list: [] } }))]).then(([linked, all]) => {
+    const linkedList = (linked.data && linked.data.list) ? linked.data.list : [];
+    const allList = (all.data && all.data.list) ? all.data.list : [];
+    const linkedIds = new Set(linkedList.map(it => it.id));
+    let h = '<div style="display:flex;gap:24px"><div style="flex:1"><h4>已关联</h4>';
+    linkedList.forEach(it => { h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid var(--border)"><span>' + (it.name||it.chineseName||it.id) + '</span><button class="btn-d btn-xs" onclick="removeHospitalRel(' + hospitalId + ',' + it.id + ')">移除</button></div>'; });
+    if (!linkedList.length) h += '<div class="empty">暂无关联</div>';
+    h += '</div><div style="flex:1"><h4>可关联</h4>';
+    const available = allList.filter(it => !linkedIds.has(it.id));
+    available.forEach(it => { h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid var(--border)"><span>' + (it.name||it.chineseName||it.id) + '</span><button class="btn-p btn-xs" onclick="addHospitalRel(' + hospitalId + ',' + it.id + ')">关联</button></div>'; });
+    if (!available.length) h += '<div class="empty">无可关联项</div>';
+    h += '</div></div>';
+    $('#relContent').innerHTML = h;
+  });
+}
+
+function addHospitalRel(hospitalId, relId) {
+  const body = { hospitalId: hospitalId, specialId: relId };
+  api('/hospital/special/relation', { method: 'POST', body: JSON.stringify(body) }).then(res => { if (res.code === 200) { toast('关联成功'); closeModal(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+function removeHospitalRel(hospitalId, relId) {
+  if (!confirm('确认移除此关联？')) return;
+  const url = '/hospital/special/relation?hospitalId=' + hospitalId + '&specialId=' + relId;
+  api(url, { method: 'DELETE' }).then(res => { if (res.code === 200) { toast('移除成功'); closeModal(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+function deleteHospital(id) {
+  if (!confirm('确认删除此医院？')) return;
+  api('/hospital/info/' + id, { method: 'DELETE' }).then(res => { if (res.code === 200) { toast('删除成功'); hospitals(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 2. 专科管理 ====================
+function specials(pageNum) {
+  pageNum = pageNum || 1;
+  let nameFilter = (window._sfVal || '');
+  const params = new URLSearchParams({ pageNum: pageNum, pageSize: 10 });
+  if (nameFilter) params.append('name', nameFilter);
+  api('/hospital/special/list?' + params).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<div class="page-title">📋 专科管理</div><div class="card"><div class="card-title">专科列表<button class="btn-p btn-sm" onclick="showSpecialModal()">+ 添加专科</button></div><div class="search-bar"><div class="field"><label>专科名称</label><input id="sfInput" placeholder="搜索..." value="' + (nameFilter||'') + '"></div><button class="btn-p btn-sm" onclick="window._sfVal=$(\'#sfInput\').value;specials(1)">🔍</button><button class="btn-o btn-sm" onclick="window._sfVal=\'\';specials(1)">重置</button></div><table><thead><tr><th>ID</th><th>名称</th><th>描述</th><th>操作</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(s => {
+      h += '<tr><td>' + s.id + '</td><td><b>' + (s.name||'') + '</b></td><td>' + (s.description||'') + '</td><td><div class="btn-group"><button class="btn-o btn-xs" onclick="showSpecialModal(' + s.id + ')">✏️</button><button class="btn-d btn-xs" onclick="deleteSpecial(' + s.id + ')">🗑️</button></div></td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'specials') + '</div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function showSpecialModal(id) {
+  const isEdit = !!id;
+  function render(d) {
+    d = d || {};
+    showModal(isEdit ? '编辑专科' : '添加专科',
+      '<div class="form-row"><div class="form-col"><label>名称 *</label><input id="fSpName" value="' + (d.name||'') + '"></div><div class="form-col"><label>描述</label><textarea id="fSpDesc">' + (d.description||'') + '</textarea></div></div>',
+      () => {
+        const body = { name: $('#fSpName').value, description: $('#fSpDesc').value };
+        const method = isEdit ? 'PUT' : 'POST';
+        const url = isEdit ? '/hospital/special/' + id : '/hospital/special';
+        api(url, { method: method, body: JSON.stringify(body) }).then(res => { if (res.code === 200) { toast(isEdit ? '更新成功' : '添加成功'); closeModal(); specials(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+      });
+  }
+  if (isEdit) {
+    api('/hospital/special/list?pageNum=1&pageSize=200').then(r => { const list = (r.data && r.data.list) ? r.data.list : []; render(list.find(s => s.id === id) || {}); }).catch(() => render({}));
+  } else render({});
+}
+
+function deleteSpecial(id) {
+  if (!confirm('确认删除？')) return;
+  api('/hospital/special/' + id, { method: 'DELETE' }).then(res => { if (res.code === 200) { toast('删除成功'); specials(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 4. 诊室管理 ====================
+function clinics(pageNum) {
+  pageNum = pageNum || 1;
+  let url = '/hospital/clinic/list?pageNum=' + pageNum + '&pageSize=10';
+  api(url).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<div class="page-title">🏠 诊室管理</div><div class="card"><div class="card-title">诊室列表<button class="btn-p btn-sm" onclick="showClinicModal()">+ 添加诊室</button></div><table><thead><tr><th>ID</th><th>地址</th><th>创建时间</th><th>操作</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(c => {
+      h += '<tr><td>' + c.id + '</td><td>' + (c.address||'') + '</td><td>' + (c.gmtCreate||'') + '</td><td><div class="btn-group"><button class="btn-o btn-xs" onclick="editClinic(' + c.id + ')">✏️</button><button class="btn-d btn-xs" onclick="deleteClinic(' + c.id + ')">🗑️</button></div></td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'clinics') + '</div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function editClinic(id) {
+  api('/hospital/clinic/' + id).then(r => {
+    if (r.code === 200) showClinicModal(r.data);
+  }).catch(() => toast('查询失败', 'err'));
+}
+
+function deleteClinic(id) {
+  if (!confirm('确认删除诊室 #' + id + '？')) return;
+  api('/hospital/clinic/' + id, { method: 'DELETE' }).then(res => { if (res.code === 200) { toast('删除成功'); clinics(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+function showClinicModal(d) {
+  d = d || {};
+  const isEdit = !!d.id;
+  showModal(isEdit ? '编辑诊室' : '添加诊室',
+    '<div class="form-row"><div class="form-col"><label>地址 *</label><input id="fCliAddr" value="' + (d.address||'') + '"></div></div>',
+    () => {
+      const body = { address: $('#fCliAddr').value };
+      const method = isEdit ? 'PUT' : 'POST';
+      const url = isEdit ? '/hospital/clinic/' + d.id : '/hospital/clinic';
+      api(url, { method: method, body: JSON.stringify(body) }).then(res => { if (res.code === 200) { toast(isEdit ? '更新成功' : '添加成功'); closeModal(); clinics(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+    });
+}
+
+// ==================== 5. 医生管理 ====================
+function doctors(pageNum) {
+  pageNum = pageNum || 1;
+  let nameFilter = (window._dfVal || '');
+  const params = new URLSearchParams({ pageNum: pageNum, pageSize: 10 });
+  if (nameFilter) params.append('name', nameFilter);
+  api('/hospital/doctor/list?' + params).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<div class="page-title">👨‍⚕️ 医生管理</div><div class="card"><div class="card-title">医生列表<button class="btn-p btn-sm" onclick="showDoctorModal()">+ 添加医生</button></div><div class="search-bar"><div class="field"><label>医生姓名</label><input id="dfInput" placeholder="搜索..." value="' + (nameFilter||'') + '"></div><button class="btn-p btn-sm" onclick="window._dfVal=$(\'#dfInput\').value;doctors(1)">🔍</button><button class="btn-o btn-sm" onclick="window._dfVal=\'\';doctors(1)">重置</button></div><table><thead><tr><th>ID</th><th>姓名</th><th>性别</th><th>职称</th><th>专长</th><th>专科ID</th><th>操作</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(d => {
+      h += '<tr><td>' + d.id + '</td><td><b>' + (d.name||'') + '</b></td><td>' + (d.gender===1?'男':d.gender===2?'女':'-') + '</td><td>' + (d.jobTitle||'') + '</td><td>' + (d.specialty||'') + '</td><td>' + (d.specialId||'') + '</td><td><div class="btn-group"><button class="btn-o btn-xs" onclick="showDoctorModal(' + d.id + ')">✏️</button><button class="btn-d btn-xs" onclick="deleteDoctor(' + d.id + ')">🗑️</button></div></td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'doctors') + '</div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function showDoctorModal(id) {
+  const isEdit = !!id;
+  function render(d) {
+    d = d || {};
+    showModal(isEdit ? '编辑医生' : '添加医生',
+      '<div class="form-row"><div class="form-col"><label>姓名 *</label><input id="fDocName" value="' + (d.name||'') + '"></div><div class="form-col"><label>性别 *</label><select id="fDocGender"><option value="1"' + (d.gender===1?' selected':'') + '>男</option><option value="2"' + (d.gender===2?' selected':'') + '>女</option></select></div><div class="form-col"><label>职称 *</label><input id="fDocTitle" value="' + (d.jobTitle||'') + '"></div><div class="form-col"><label>专长</label><input id="fDocSpec" value="' + (d.specialty||'') + '"></div><div class="form-col"><label>专科ID *</label><input id="fDocSpId" type="number" value="' + (d.specialId||'') + '"></div></div>',
+      () => {
+        const body = { name: $('#fDocName').value, gender: parseInt($('#fDocGender').value), jobTitle: $('#fDocTitle').value, specialty: $('#fDocSpec').value, specialId: parseInt($('#fDocSpId').value) };
+        const method = isEdit ? 'PUT' : 'POST';
+        const url = isEdit ? '/hospital/doctor/' + id : '/hospital/doctor';
+        api(url, { method: method, body: JSON.stringify(body) }).then(res => { if (res.code === 200) { toast(isEdit ? '更新成功' : '添加成功'); closeModal(); doctors(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+      });
+  }
+  if (isEdit) {
+    api('/hospital/doctor/' + id).then(r => { if (r.code === 200) render(r.data); }).catch(() => render({}));
+  } else render({});
+}
+
+function deleteDoctor(id) {
+  if (!confirm('确认删除？')) return;
+  api('/hospital/doctor/' + id, { method: 'DELETE' }).then(res => { if (res.code === 200) { toast('删除成功'); doctors(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 6. 出诊计划 ====================
+function plans(pageNum) {
+  pageNum = pageNum || 1;
+  api('/visit/plan/admin/list?pageNum=' + pageNum + '&pageSize=10').then(r => {
+    if (r.code !== 200 || !r.data) { $('#pageContent').innerHTML = '<div class="empty">暂无数据，请先添加出诊计划</div>'; return; }
+    let h = '<div class="page-title">📅 出诊计划</div><div class="card"><div class="card-title">出诊计划列表<button class="btn-p btn-sm" onclick="showPlanModal()">+ 添加计划</button></div><table><thead><tr><th>ID</th><th>医院</th><th>专科</th><th>诊室</th><th>医生</th><th>时间段</th><th>日期</th><th>操作</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(p => {
+      h += '<tr><td>' + p.id + '</td><td>' + (p.hospitalName||p.hospitalId) + '</td><td>' + (p.specialName||p.specialId) + '</td><td>' + (p.clinicName||p.clinicId) + '</td><td><b>' + (p.doctorName||p.doctorId) + '</b></td><td>' + (p.time===1?'🌅上午':'🌇下午') + '</td><td>' + (p.day||'') + '</td><td><div class="btn-group"><button class="btn-o btn-xs" onclick="showPlanModal(' + p.id + ')">✏️</button><button class="btn-d btn-xs" onclick="deletePlan(' + p.id + ')">🗑️</button></div></td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'plans') + '</div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function showPlanModal(id) {
+  const isEdit = !!id;
+  function render(d) {
+    d = d || {};
+    showModal(isEdit ? '编辑出诊计划' : '添加出诊计划',
+      '<div class="form-row"><div class="form-col"><label>医院ID *</label><input id="fPlanHosId" type="number" value="' + (d.hospitalId||'') + '"></div><div class="form-col"><label>专科ID *</label><input id="fPlanSpId" type="number" value="' + (d.specialId||'') + '"></div><div class="form-col"><label>诊室ID *</label><input id="fPlanCliId" type="number" value="' + (d.clinicId||'') + '"></div><div class="form-col"><label>医生ID *</label><input id="fPlanDocId" type="number" value="' + (d.doctorId||'') + '"></div><div class="form-col"><label>时间段 *</label><select id="fPlanTime"><option value="1"' + (d.time===1?' selected':'') + '>上午</option><option value="2"' + (d.time===2?' selected':'') + '>下午</option></select></div><div class="form-col"><label>日期 *</label><input id="fPlanDay" type="date" value="' + (d.day||'') + '"></div></div>',
+      () => {
+        const body = { hospitalId: parseInt($('#fPlanHosId').value), specialId: parseInt($('#fPlanSpId').value), clinicId: parseInt($('#fPlanCliId').value), doctorId: parseInt($('#fPlanDocId').value), time: parseInt($('#fPlanTime').value), day: $('#fPlanDay').value };
+        const method = isEdit ? 'PUT' : 'POST';
+        const url = isEdit ? '/visit/plan/' + id : '/visit/plan';
+        api(url, { method: method, body: JSON.stringify(body) }).then(res => { if (res.code === 200) { toast(isEdit ? '更新成功' : '添加成功'); closeModal(); plans(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+      });
+  }
+  if (isEdit) {
+    api('/visit/plan/admin/list?pageNum=1&pageSize=500').then(r => { const list = (r.data && r.data.list) ? r.data.list : []; render(list.find(p => p.id === id) || {}); }).catch(() => render({}));
+  } else render({});
+}
+
+function deletePlan(id) {
+  if (!confirm('确认删除此出诊计划？')) return;
+  api('/visit/plan/' + id, { method: 'DELETE' }).then(res => { if (res.code === 200) { toast('删除成功'); plans(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 7. 预约管理 ====================
+function appointments() {
+  let h = '<div class="page-title">📝 预约管理</div><div class="card"><div class="card-title">预约管理</div><div class="tabs"><button class="active" onclick="apptTab(\'list\')">预约列表</button><button onclick="apptTab(\'patient\')">病人查询</button></div><div id="apptContent"></div></div>';
+  $('#pageContent').innerHTML = h;
+  apptTab('list');
+}
+
+function apptTab(tab) {
+  $$('.tabs button').forEach((b, i) => b.classList.toggle('active', (i === 0 && tab === 'list') || (i === 1 && tab === 'patient')));
+  if (tab === 'list') {
+    $('#apptContent').innerHTML = '<div class="search-bar"><div class="field"><label>就诊卡ID</label><input id="fApptCardId" type="number" placeholder="选填"></div><div class="field"><label>医生ID</label><input id="fApptDocId" type="number" placeholder="选填"></div><div class="field"><label>出诊日期</label><input id="fApptDate" type="date"></div><div class="field"><label>状态</label><select id="fApptStatus"><option value="">全部</option><option value="0">待就诊</option><option value="1">失约</option><option value="2">取消</option><option value="3">完成</option></select></div><button class="btn-p btn-sm" onclick="searchAppointments(1)">🔍 搜索</button></div><div id="apptTable"><div class="empty">加载中...</div></div>';
+    searchAppointments(1); // 默认加载全部
+  } else {
+    $('#apptContent').innerHTML = '<div class="search-bar"><div class="field"><label>医生ID</label><input id="fPatDocId" type="number" placeholder="选填"></div><div class="field"><label>日期</label><input id="fPatDate" type="date"></div><div class="field"><label>时间段</label><select id="fPatTime"><option value="">全部</option><option value="1">上午</option><option value="2">下午</option></select></div><button class="btn-p btn-sm" onclick="searchPatients(1)">🔍 搜索</button></div><div id="patTable"><div class="empty">加载中...</div></div>';
+    searchPatients(1); // 默认加载全部
+  }
+}
+
+function searchAppointments(pageNum) {
+  const cardId = $('#fApptCardId').value || '';
+  const doctorId = $('#fApptDocId').value || '';
+  const date = $('#fApptDate').value || '';
+  const status = $('#fApptStatus').value;
+  const params = new URLSearchParams({ pageNum: pageNum, pageSize: 10 });
+  if (cardId) params.append('cardId', cardId);
+  if (doctorId) params.append('doctorId', doctorId);
+  if (date) params.append('date', date);
+  if (status !== '') params.append('status', status);
+  // 管理端专用接口：查全部病人的预约（用户端 /search 接口会按登录人过滤，管理员查不到病人数据）
+  api('/visit/appointment/admin/list?' + params).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    const stLabels = {0:'⏳待就诊', 1:'❌失约', 2:'🚫取消', 3:'✅完成'};
+    const payLabels = {0:'💰未支付', 1:'✅已支付', 2:'↩️已退款'};
+    const timeLabels = {1:'上午', 2:'下午'};
+    let h = '<table><thead><tr><th>预约ID</th><th>患者姓名</th><th>就诊卡ID</th><th>医生</th><th>出诊日期</th><th>时段</th><th>支付状态</th><th>状态</th><th>操作</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(a => {
+      const dayStr = a.day ? String(a.day).substring(0, 10) : '-';
+      h += '<tr><td>' + a.appointmentId + '</td><td><b>' + (a.patientName||'-') + '</b></td><td>' + a.cardId + '</td><td>' + (a.doctorName||'-') + '</td><td>' + dayStr + '</td><td>' + (timeLabels[a.time]||'-') + '</td><td>' + (payLabels[a.payStatus]||'-') + '</td><td>' + (stLabels[a.status]||a.status) + '</td><td><div class="btn-group"><button class="btn-w btn-xs" onclick="markMiss(\'' + a.appointmentId + '\')">标记失约</button><button class="btn-s btn-xs" onclick="markFinish(\'' + a.appointmentId + '\',' + a.cardId + ',' + a.planId + ')">标记完成</button></div></td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'searchAppointments');
+    $('#apptTable').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function markMiss(id) {
+  if (!confirm('确认标记为失约？')) return;
+  api('/visit/appointment/miss/' + id, { method: 'PUT' }).then(res => { if (res.code === 200) { toast('已标记失约'); searchAppointments(1); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+function markFinish(id, cardId, planId) {
+  // 先获取出诊计划详情（获取医生信息）
+  api('/visit/plan/' + planId).then(planRes => {
+    if (planRes.code !== 200 || !planRes.data) { toast('获取出诊计划信息失败', 'err'); return; }
+    const doctorId = planRes.data.doctorId;
+    const doctorName = planRes.data.doctorName || '';
+    const bodyHtml = '<div class="form-row"><div class="form-col"><label>预约ID</label><input type="text" value="' + id + '" disabled></div><div class="form-col"><label>就诊卡ID</label><input type="text" value="' + cardId + '" disabled></div><div class="form-col"><label>接诊医生</label><input type="text" value="' + doctorName + '（ID:' + doctorId + '）" disabled></div></div><div class="form-col" style="margin-top:12px"><label>主诉 *</label><textarea id="fChiefComplaint" placeholder="患者自述的主要症状（如：头痛3天、发热38.5℃）" style="min-height:60px"></textarea></div><div class="form-col"><label>现病史 *</label><textarea id="fHistory" placeholder="发病过程、已做检查及治疗情况" style="min-height:60px"></textarea></div><div class="form-col"><label>诊断结果 *</label><textarea id="fDiagnosis" placeholder="医生诊断结果" style="min-height:60px"></textarea></div><div class="form-col"><label>处理意见</label><textarea id="fTreatment" placeholder="用药建议、治疗方案、复诊建议等" style="min-height:60px"></textarea></div>';
+    showModal('📋 标记完成 — 填写病历', bodyHtml, async () => {
+      const chiefComplaint = $('#fChiefComplaint').value.trim();
+      const history = $('#fHistory').value.trim();
+      const diagnosis = $('#fDiagnosis').value.trim();
+      const treatment = $('#fTreatment').value.trim();
+      if (!chiefComplaint) return toast('请填写主诉', 'err');
+      if (!history) return toast('请填写现病史', 'err');
+      if (!diagnosis) return toast('请填写诊断结果', 'err');
+      const content = '【主诉】' + chiefComplaint + '\n【现病史】' + history + '\n【诊断结果】' + diagnosis + (treatment ? '\n【处理意见】' + treatment : '');
+      try {
+        const finishRes = await api('/visit/appointment/finish/' + id, { method: 'PUT' });
+        if (finishRes.code !== 200) { toast(finishRes.message || '标记完成失败', 'err'); return; }
+        const caseBody = { cardId: cardId, appointmentId: id, doctorId: doctorId, content: content };
+        const caseRes = await api('/user/case', { method: 'POST', body: JSON.stringify(caseBody) });
+        if (caseRes.code === 200) { toast('✅ 已标记完成并创建病例'); closeModal(); searchAppointments(1); }
+        else { toast('标记完成，但创建病例失败：' + (caseRes.message || ''), 'err'); closeModal(); searchAppointments(1); }
+      } catch(e) { toast(e.message, 'err'); }
+    }, { wide: true });
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function searchPatients(pageNum) {
+  const doctorId = $('#fPatDocId').value;
+  const date = $('#fPatDate').value;
+  const time = $('#fPatTime').value;
+  let url = '/visit/appointment/user?pageNum=' + pageNum + '&pageSize=10';
+  if (doctorId) url += '&doctorId=' + doctorId;
+  if (date) url += '&date=' + date;
+  if (time) url += '&time=' + time;
+  api(url).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<table><thead><tr><th>预约ID</th><th>患者姓名</th><th>手机号</th><th>就诊卡ID</th><th>时间段</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(u => {
+      h += '<tr><td>' + (u.appointmentId||u.id) + '</td><td><b>' + (u.patientName||'-') + '</b></td><td>' + (u.phone||'-') + '</td><td>' + (u.cardId||'-') + '</td><td>' + (u.timePeriod||'') + '</td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'searchPatients');
+    $('#patTable').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 8. 支付管理 ====================
+function payments(pageNum) {
+  pageNum = pageNum || 1;
+  api('/admin/payment/order/list?pageNum=' + pageNum + '&pageSize=15').then(r => {
+    if (r.code !== 200 || !r.data) return;
+    const list = r.data.list || [];
+    const total = r.data.total || 0;
+    const statusMap = {0:'待支付',1:'支付中',2:'已支付',3:'失败',4:'已退款',5:'已过期'};
+    const tagMap = {0:'tag-w',1:'tag-w',2:'tag-s',3:'tag-off',4:'tag',5:'tag-off'};
+    let h = '<div class="page-title">💰 支付管理</div>';
+    h += '<div class="card"><div class="card-title">支付订单列表</div>';
+    h += '<table><thead><tr><th>支付单号</th><th>账号ID</th><th>金额</th><th>状态</th><th>支付方式</th><th>支付时间</th><th>过期时间</th><th>操作</th></tr></thead><tbody>';
+    list.forEach(o => {
+      const st = statusMap[o.status] || '未知';
+      const tg = tagMap[o.status] || '';
+      h += '<tr>';
+      h += '<td><span title="订单ID:'+o.paymentId+'">'+(o.paymentNo||'—')+'</span></td>';
+      h += '<td>'+ (o.accountId||'—') +'</td>';
+      h += '<td><b>¥'+(o.amountYuan||'0.00')+'</b></td>';
+      h += '<td><span class="tag '+tg+'">'+st+'</span></td>';
+      h += '<td>'+ (o.payMethod||'WALLET') +'</td>';
+      h += '<td style="font-size:12px">'+ (o.payTime||'—') +'</td>';
+      h += '<td style="font-size:12px">'+ (o.expireTime||'—') +'</td>';
+      h += '<td>';
+      if (o.status === 2) {
+        h += '<button class="btn-d btn-xs" onclick="adminRefund('+o.paymentId+')">退款</button>';
+      }
+      h += '</td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(total, pageNum, 15, 'payments') + '</div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function adminRefund(paymentId) {
+  showModal('确认退款',
+    '<p style="color:var(--text2);margin-bottom:12px">确定对该支付订单进行退款操作？退款金额将原路退回用户钱包。</p><div class="form-col"><label>退款原因</label><input id="refundReason" value="管理员退款" placeholder="请输入退款原因"></div>',
+    () => {
+      const reason = $('#refundReason').value.trim() || '管理员退款';
+      api('/admin/payment/refund/' + paymentId, { method: 'POST', body: JSON.stringify({ reason: reason }) })
+        .then(res => {
+          if (res.code === 200) { toast('退款成功'); closeModal(); payments(currentPage); }
+          else toast(res.message || '退款失败', 'err');
+        }).catch(e => toast(e.message, 'err'));
+    }, {});
+}
+
+// ==================== 9. 病例管理 ====================
+function cases(pageNum) {
+  pageNum = pageNum || 1;
+  let cardFilter = (window._cfVal || '');
+  const params = new URLSearchParams({ pageNum: pageNum, pageSize: 10 });
+  if (cardFilter) params.append('cardId', cardFilter);
+  api('/user/case/list?' + params).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<div class="page-title">📄 病例管理</div><div class="card"><div class="card-title">病例列表<button class="btn-p btn-sm" onclick="showCaseModal()">+ 添加病例</button></div><div class="search-bar"><div class="field"><label>就诊卡ID</label><input id="cfInput" placeholder="选填" value="' + (cardFilter||'') + '"></div><button class="btn-p btn-sm" onclick="window._cfVal=$(\'#cfInput\').value;cases(1)">🔍</button><button class="btn-o btn-sm" onclick="window._cfVal=\'\';cases(1)">重置</button></div><table><thead><tr><th>ID</th><th>就诊卡ID</th><th>预约ID</th><th>医生ID</th><th>内容</th><th>创建时间</th><th>操作</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(c => {
+      h += '<tr><td>' + c.id + '</td><td>' + c.cardId + '</td><td>' + c.appointmentId + '</td><td>' + c.doctorId + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (c.content||'') + '</td><td>' + (c.gmtCreate||'') + '</td><td><div class="btn-group"><button class="btn-o btn-xs" onclick="showCaseModal(' + c.id + ')">✏️</button><button class="btn-d btn-xs" onclick="deleteCase(' + c.id + ')">🗑️</button></div></td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'cases') + '</div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function showCaseModal(id) {
+  const isEdit = !!id;
+  function render(d) {
+    d = d || {};
+    showModal(isEdit ? '编辑病例' : '添加病例',
+      (isEdit ? '' : '<div class="form-row"><div class="form-col"><label>就诊卡ID *</label><input id="fCaseCardId" type="number" value="' + (d.cardId||'') + '"></div><div class="form-col"><label>预约ID *</label><input id="fCaseApptId" type="number" value="' + (d.appointmentId||'') + '"></div><div class="form-col"><label>医生ID *</label><input id="fCaseDocId" type="number" value="' + (d.doctorId||'') + '"></div></div>') + '<div class="form-col" style="margin-top:12px"><label>病例详情 *</label><textarea id="fCaseContent" style="min-height:150px">' + (d.content||'') + '</textarea></div>',
+      () => {
+        if (isEdit) {
+          api('/user/case/' + id, { method: 'PUT', body: JSON.stringify({ content: $('#fCaseContent').value }) }).then(res => { if (res.code === 200) { toast('更新成功'); closeModal(); cases(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+        } else {
+          const body = { cardId: parseInt($('#fCaseCardId').value), appointmentId: parseInt($('#fCaseApptId').value), doctorId: parseInt($('#fCaseDocId').value), content: $('#fCaseContent').value };
+          api('/user/case', { method: 'POST', body: JSON.stringify(body) }).then(res => { if (res.code === 200) { toast('添加成功'); closeModal(); cases(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+        }
+      });
+  }
+  if (isEdit) {
+    api('/user/case/list?pageNum=1&pageSize=500').then(r => { const list = (r.data && r.data.list) ? r.data.list : []; render(list.find(c => c.id === id) || {}); }).catch(() => render({}));
+  } else render({});
+}
+
+function deleteCase(id) {
+  if (!confirm('确认删除？')) return;
+  api('/user/case/' + id, { method: 'DELETE' }).then(res => { if (res.code === 200) { toast('删除成功'); cases(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 9. 健康资讯 ====================
+function notices() {
+  let h = '<div class="page-title">📢 健康资讯</div><div class="card"><div class="card-title">发布资讯</div><div class="form-row"><div class="form-col"><label>选择医院 *</label><select id="fNoticeHosId"><option value="">— 请选择医院 —</option></select></div><div class="form-col"><label>标题 *</label><input id="fNoticeTitle"></div><div class="form-col"><label>图片</label><div style="display:flex;gap:8px"><input id="fNoticePic" placeholder="图片URL（可选）" style="flex:1"><input type="file" id="noticeUploadFile" accept="image/*" style="display:none" onchange="doPictureUpload(\'noticeUploadFile\',\'fNoticePic\',\'noticeUploadStatus\')"><button class="btn-o btn-sm" onclick="$(\'#noticeUploadFile\').click()" title="上传图片">📷 上传</button></div><div id="noticeUploadStatus" style="font-size:12px;color:var(--text3);margin-top:4px"></div></div></div><div class="form-col" style="margin-top:12px"><label>内容 *</label><textarea id="fNoticeContent" style="min-height:150px"></textarea></div><div style="margin-top:16px"><button class="btn-p" onclick="publishNotice()">📢 发布资讯</button></div></div><div class="card"><div class="card-title">已有资讯 <button class="btn-o btn-sm" onclick="loadNotices()">🔄 刷新</button></div><div id="noticeList"><div class="empty" style="padding:20px">加载中...</div></div></div>';
+  $('#pageContent').innerHTML = h;
+  // 加载医院列表到下拉框
+  api('/hospital/info/list?pageNum=1&pageSize=200').then(r => {
+    if (r.code === 200 && r.data && r.data.list) {
+      const sel = $('#fNoticeHosId');
+      sel.innerHTML = '<option value="">— 请选择医院 —</option>';
+      r.data.list.forEach(hos => {
+        sel.innerHTML += '<option value="' + hos.id + '">' + (hos.name || '医院#' + hos.id) + '</option>';
+      });
+    }
+  }).catch(() => {});
+  // 进入页面自动加载已有资讯
+  loadNotices();
+}
+
+function publishNotice() {
+  const hospitalId = $('#fNoticeHosId').value;
+  const title = $('#fNoticeTitle').value;
+  const content = $('#fNoticeContent').value;
+  const picture = $('#fNoticePic').value;
+  if (!hospitalId || !title || !content) { toast('请填写必填项', 'err'); return; }
+  const params = new URLSearchParams({ hospitalId: hospitalId, title: title, content: content });
+  if (picture) params.append('picture', picture);
+  fetch(BASE + '/notice?' + params, { method: 'POST', headers: token ? { 'Authorization': 'Bearer ' + token } : {} }).then(r => r.json()).then(res => { if (res.code === 200) { toast(res.data || '发布成功'); $('#fNoticeTitle').value = ''; $('#fNoticeContent').value = ''; loadNotices(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+function doPictureUpload(fileId, targetId, statusId) {
+  const file = $('#' + fileId).files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  $('#' + statusId).textContent = '⏳ 上传中...';
+  fetch(BASE + '/picture/upload', { method: 'POST', headers: token ? { 'Authorization': 'Bearer ' + token } : {}, body: fd })
+    .then(r => r.json())
+    .then(res => {
+      if (res.code === 200 && res.data) {
+        $('#' + targetId).value = res.data;
+        $('#' + statusId).textContent = '✅ 上传成功，URL已填入上方';
+      } else {
+        $('#' + statusId).textContent = '❌ ' + (res.message || '上传失败');
+      }
+    })
+    .catch(() => { $('#' + statusId).textContent = '❌ 网络错误'; });
+}
+
+function loadNotices() {
+  api('/hospital/notice/list/all').then(r => {
+    if (r.code !== 200 || !r.data) { $('#noticeList').innerHTML = '<div class="empty">暂无资讯</div>'; return; }
+    let h = '<table><thead><tr><th>ID</th><th>医院</th><th>标题</th><th>内容</th><th>图片</th><th>时间</th></tr></thead><tbody>';
+    (r.data || []).forEach(n => {
+      h += '<tr><td>' + n.id + '</td><td>' + (n.hospitalName||n.hospitalId) + '</td><td><b>' + (n.title||'') + '</b></td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (n.content||'') + '</td><td>' + (n.picture ? '<img src="' + n.picture + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px">' : '-') + '</td><td>' + (n.gmtCreate||'') + '</td></tr>';
+    });
+    h += '</tbody></table>';
+    $('#noticeList').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 10. 信用管理 ====================
+function credit() {
+  let h = '<div class="page-title">🛡️ 信用管理</div>';
+  // 四合一布局：2x2 网格
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+  // 1. 黑名单验证
+  h += '<div class="card"><div class="card-title">🚫 黑名单验证</div><div class="form-row"><div class="form-col"><label>就诊卡ID</label><input id="fBlackCardId" type="number"></div></div><button class="btn-p btn-sm" onclick="verifyBlack()">验证</button><div id="blackResult" style="margin-top:12px"></div></div>';
+  // 2. 当月信用
+  h += '<div class="card"><div class="card-title">📊 当月信用</div><div class="form-row"><div class="form-col"><label>账号ID</label><input id="fCreditAccId" type="number"></div><div class="form-col"><label>就诊卡ID</label><input id="fCreditCardId" type="number"></div></div><button class="btn-p btn-sm" onclick="queryCredit(\'current\')">查询</button><div id="creditResult" style="margin-top:12px"></div></div>';
+  // 3. 全部信用
+  h += '<div class="card"><div class="card-title">📈 全部信用</div><div class="form-row"><div class="form-col"><label>账号ID</label><input id="fCreditAllAccId" type="number"></div><div class="form-col"><label>就诊卡ID</label><input id="fCreditAllCardId" type="number"></div></div><button class="btn-p btn-sm" onclick="queryCredit(\'all\')">查询</button><div id="creditAllResult" style="margin-top:12px"></div></div>';
+  // 4. 失信记录
+  h += '<div class="card"><div class="card-title">❌ 失信记录</div><div class="form-row"><div class="form-col"><label>就诊卡ID</label><input id="fMissCardId" type="number"></div></div><button class="btn-p btn-sm" onclick="queryMiss(1)">查询</button><div id="missResult" style="margin-top:12px"></div></div>';
+  h += '</div>';
+  $('#pageContent').innerHTML = h;
+}
+
+function verifyBlack() {
+  const cardId = $('#fBlackCardId').value;
+  if (!cardId) { toast('请输入就诊卡ID', 'err'); return; }
+  api('/visit/black/verify?cardId=' + cardId).then(r => {
+    if (r.code === 200) {
+      $('#blackResult').innerHTML = '<div class="card" style="text-align:center"><div style="font-size:48px">' + (r.data ? '🚫' : '✅') + '</div><div style="font-size:18px;font-weight:600;margin-top:8px">' + (r.data ? '该卡在黑名单中' : '该卡正常') + '</div></div>';
+    } else toast(r.message, 'err');
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function queryCredit(type) {
+  const accId = type === 'current' ? $('#fCreditAccId').value : $('#fCreditAllAccId').value;
+  const cardId = type === 'current' ? $('#fCreditCardId').value : $('#fCreditAllCardId').value;
+  if (!accId || !cardId) { toast('请填写完整', 'err'); return; }
+  const url = type === 'current' ? '/visit/credit/current' : '/visit/credit/all';
+  api(url + '?accountId=' + accId + '&cardId=' + cardId).then(r => {
+    if (r.code === 200 && r.data) {
+      const d = r.data;
+      const el = type === 'current' ? $('#creditResult') : $('#creditAllResult');
+      el.innerHTML = '<div class="stat-grid"><div class="stat-card"><div class="num">' + (d.finish||0) + '</div><div class="label">完成</div></div><div class="stat-card"><div class="num" style="color:var(--danger)">' + (d.miss||0) + '</div><div class="label">失约</div></div><div class="stat-card"><div class="num" style="color:var(--warning)">' + (d.cancel||0) + '</div><div class="label">取消</div></div>' + (d.blacklisted ? '<div class="stat-card"><div class="num" style="color:var(--danger)">🚫</div><div class="label">黑名单</div></div>' : '') + '</div>';
+    } else toast(r.message, 'err');
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function queryMiss(pageNum) {
+  const cardId = $('#fMissCardId').value;
+  if (!cardId) { toast('请输入就诊卡ID', 'err'); return; }
+  api('/visit/credit/miss?cardId=' + cardId + '&pageNum=' + pageNum + '&pageSize=10').then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<table><thead><tr><th>ID</th><th>就诊卡ID</th><th>计划ID</th><th>状态</th><th>时间</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(a => { const stLbl={1:'❌失约',2:'🚫取消'}; h += '<tr><td>' + a.id + '</td><td>' + a.cardId + '</td><td>' + a.planId + '</td><td>' + (stLbl[a.status]||'❌失约') + '</td><td>' + (a.gmtCreate||'') + '</td></tr>'; });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'queryMiss');
+    $('#missResult').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 11. 用户信息 ====================
+function users(pageNum) {
+  pageNum = pageNum || 1;
+  let nameFilter = (window._unVal || ''), phoneFilter = (window._upVal || '');
+  const params = new URLSearchParams({ pageNum: pageNum, pageSize: 10 });
+  if (nameFilter) params.append('name', nameFilter);
+  if (phoneFilter) params.append('phone', phoneFilter);
+  api('/user/basic/list?' + params).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<div class="page-title">👤 用户信息</div><div class="card"><div class="card-title">用户列表</div><div class="search-bar"><div class="field"><label>姓名</label><input id="unInput" placeholder="搜索..." value="' + (nameFilter||'') + '"></div><div class="field"><label>手机号</label><input id="upInput" placeholder="搜索..." value="' + (phoneFilter||'') + '"></div><button class="btn-p btn-sm" onclick="window._unVal=$(\'#unInput\').value;window._upVal=$(\'#upInput\').value;users(1)">🔍</button><button class="btn-o btn-sm" onclick="window._unVal=\'\';window._upVal=\'\';users(1)">重置</button></div><table><thead><tr><th>ID</th><th>昵称</th><th>头像</th><th>手机号</th><th>性别</th><th>状态</th><th>注册时间</th><th>操作</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(u => {
+      h += '<tr><td>' + u.id + '</td><td><b>' + (u.nickname||u.name||'') + '</b></td><td>' + (u.avatarUrl ? '<img src="' + u.avatarUrl + '" style="width:36px;height:36px;border-radius:50%">' : '-') + '</td><td>' + (u.phone||'') + '</td><td>' + (u.gender===1?'男':u.gender===2?'女':'-') + '</td><td><span class="tag ' + (u.status===1?'tag-on':'tag-off') + '">' + (u.status===1?'正常':'禁用') + '</span></td><td>' + (u.gmtCreate||'') + '</td><td><button class="btn-d btn-xs" onclick="deleteUser(' + u.id + ')">🗑️</button></td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'users') + '</div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function deleteUser(id) {
+  if (!confirm('确认删除此用户？')) return;
+  api('/user/basic/' + id, { method: 'DELETE' }).then(res => { if (res.code === 200) { toast('删除成功'); users(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 12. 就诊卡 ====================
+function cards(pageNum) {
+  pageNum = pageNum || 1;
+  let nameFilter = (window._cnVal || ''), phoneFilter = (window._cpVal || ''), genderFilter = parseInt(window._cgVal) || 0;
+  const params = new URLSearchParams({ pageNum: pageNum, pageSize: 10, gender: genderFilter });
+  if (nameFilter) params.append('name', nameFilter);
+  if (phoneFilter) params.append('phone', phoneFilter);
+  api('/user/card/list?' + params).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<div class="page-title">💳 就诊卡管理</div><div class="card"><div class="card-title">就诊卡列表</div><div class="search-bar"><div class="field"><label>姓名</label><input id="cnInput" placeholder="搜索..." value="' + (nameFilter||'') + '"></div><div class="field"><label>手机号</label><input id="cpInput" placeholder="搜索..." value="' + (phoneFilter||'') + '"></div><div class="field"><label>性别</label><select id="cgInput"><option value="0"' + (genderFilter===0?' selected':'') + '>全部</option><option value="1"' + (genderFilter===1?' selected':'') + '>男</option><option value="2"' + (genderFilter===2?' selected':'') + '>女</option></select></div><button class="btn-p btn-sm" onclick="window._cnVal=$(\'#cnInput\').value;window._cpVal=$(\'#cpInput\').value;window._cgVal=$(\'#cgInput\').value;cards(1)">🔍</button><button class="btn-o btn-sm" onclick="window._cnVal=\'\';window._cpVal=\'\';window._cgVal=\'0\';cards(1)">重置</button></div><table><thead><tr><th>ID</th><th>姓名</th><th>手机号</th><th>性别</th><th>身份证</th><th>出生日期</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(c => {
+      h += '<tr><td>' + c.id + '</td><td><b>' + (c.name||'') + '</b></td><td>' + (c.phone||'') + '</td><td>' + (c.gender===1?'男':c.gender===2?'女':'-') + '</td><td>' + (c.idNumber||'') + '</td><td>' + (c.birthDate||'') + '</td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'cards') + '</div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 13. 账号管理 ====================
+function accounts() {
+  let h = '<div class="page-title">🔑 账号管理</div><div class="tabs"><button class="active" onclick="accTab(\'register\')">注册账号</button><button onclick="accTab(\'status\')">状态管理</button><button onclick="accTab(\'role\')">分配角色</button></div><div id="accContent"></div>';
+  $('#pageContent').innerHTML = h;
+  accTab('register');
+}
+
+function accTab(tab) {
+  $$('.tabs button').forEach((b, i) => b.classList.toggle('active', (i === 0 && tab === 'register') || (i === 1 && tab === 'status') || (i === 2 && tab === 'role')));
+  let inner = '';
+  if (tab === 'register') {
+    inner = '<div class="card"><div class="card-title">注册管理账号</div><div class="form-row"><div class="form-col"><label>账号名称 *</label><input id="fAccName"><button class="btn-o btn-xs" style="margin-top:4px;width:auto" onclick="checkAccName()">验证是否可用</button><span id="accNameCheck" style="font-size:12px;margin-top:4px"></span></div><div class="form-col"><label>密码 *</label><input id="fAccPwd" type="password"></div></div><button class="btn-p btn-sm" onclick="registerAcc()">注册</button></div>';
+  } else if (tab === 'status') {
+    inner = '<div class="card"><div class="card-title">更新账号状态</div><div class="form-row"><div class="form-col"><label>账号ID *</label><input id="fAccStatusId" type="number"></div><div class="form-col"><label>状态 *</label><select id="fAccStatus"><option value="1">启用</option><option value="0">禁用</option></select></div></div><button class="btn-p btn-sm" onclick="updateAccStatus()">更新</button></div>';
+  } else {
+    inner = '<div class="card"><div class="card-title">分配角色</div><div class="form-row"><div class="form-col"><label>账号ID *</label><input id="fAccRoleAccId" type="number"></div></div><div id="roleCheckboxes" style="margin-top:12px">加载角色列表中...</div><button class="btn-p btn-sm" style="margin-top:12px" onclick="assignRoles()">保存</button></div>';
+    setTimeout(() => {
+      api('/power/role/list?pageNum=1&pageSize=200').then(r => {
+        if (r.code === 200 && r.data) {
+          let ch = '<div class="btn-group" style="flex-direction:column;align-items:flex-start">';
+          (r.data.list || []).forEach(role => { ch += '<label style="display:flex;align-items:center;gap:6px;padding:4px 0"><input type="checkbox" value="' + role.id + '" class="role-cb"> ' + (role.chineseName||role.name) + ' (ID:' + role.id + ')</label>'; });
+          ch += '</div>';
+          $('#roleCheckboxes').innerHTML = ch;
+        }
+      }).catch(() => {});
+    }, 100);
+  }
+  $('#accContent').innerHTML = inner;
+}
+
+function checkAccName() {
+  const name = $('#fAccName').value;
+  if (!name) { toast('请输入账号名称', 'err'); return; }
+  api('/power/account/name/validation?name=' + encodeURIComponent(name)).then(r => {
+    if (r.code === 200) {
+      const el = $('#accNameCheck');
+      el.textContent = r.data ? '❌ 已存在' : '✅ 可用';
+      el.style.color = r.data ? 'var(--danger)' : 'var(--success)';
+    }
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function registerAcc() {
+  const name = $('#fAccName').value, password = $('#fAccPwd').value;
+  if (!name || !password) { toast('请填写完整', 'err'); return; }
+  api('/power/account/admin/register', { method: 'POST', body: JSON.stringify({ name: name, password: password }) }).then(res => { if (res.code === 200) { toast('注册成功'); $('#fAccName').value = ''; $('#fAccPwd').value = ''; } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+function updateAccStatus() {
+  const accountId = parseInt($('#fAccStatusId').value), status = parseInt($('#fAccStatus').value);
+  if (!accountId) { toast('请输入账号ID', 'err'); return; }
+  api('/power/account/status', { method: 'PUT', body: JSON.stringify({ accountId: accountId, status: status }) }).then(res => { if (res.code === 200) toast('状态更新成功'); else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+function assignRoles() {
+  const accountId = parseInt($('#fAccRoleAccId').value);
+  if (!accountId) { toast('请输入账号ID', 'err'); return; }
+  const roleIds = [];
+  $$('.role-cb:checked').forEach(cb => roleIds.push(parseInt(cb.value)));
+  const params = new URLSearchParams({ accountId: accountId });
+  roleIds.forEach(id => params.append('roleIdList', id));
+  fetch(BASE + '/power/account/role?' + params, { method: 'POST', headers: token ? { 'Authorization': 'Bearer ' + token } : {} }).then(r => r.json()).then(res => { if (res.code === 200) toast('角色分配成功，影响 ' + res.data + ' 条'); else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 14. 角色管理 ====================
+function roles(pageNum) {
+  pageNum = pageNum || 1;
+  api('/power/role/list?pageNum=' + pageNum + '&pageSize=10').then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<div class="page-title">👥 角色管理</div><div class="card"><div class="card-title">角色列表<button class="btn-p btn-sm" onclick="showRoleModal()">+ 添加角色</button></div><table><thead><tr><th>ID</th><th>英文名</th><th>中文名</th><th>状态</th><th>排序</th><th>操作</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(role => {
+      h += '<tr><td>' + role.id + '</td><td>' + (role.name||'') + '</td><td><b>' + (role.chineseName||'') + '</b></td><td><span class="tag ' + (role.status===1?'tag-on':'tag-off') + '">' + (role.status===1?'启用':'禁用') + '</span></td><td>' + (role.sort||0) + '</td><td><div class="btn-group"><button class="btn-o btn-xs" onclick="showRoleModal(' + role.id + ')">✏️</button><button class="btn-o btn-xs" onclick="toggleRoleStatus(' + role.id + ',' + role.status + ')">' + (role.status===1?'禁用':'启用') + '</button><button class="btn-o btn-xs" onclick="showRoleAllocModal(' + role.id + ',\'resource\')">🔗资源</button><button class="btn-d btn-xs" onclick="deleteRole(' + role.id + ')">🗑️</button></div></td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'roles') + '</div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function showRoleModal(id) {
+  const isEdit = !!id;
+  function render(d) {
+    d = d || {};
+    showModal(isEdit ? '编辑角色' : '添加角色',
+      '<div class="form-row"><div class="form-col"><label>英文名 *</label><input id="fRoleName" value="' + (d.name||'') + '"></div><div class="form-col"><label>中文名 *</label><input id="fRoleCName" value="' + (d.chineseName||'') + '"></div><div class="form-col"><label>状态</label><select id="fRoleStatus"><option value="1"' + (d.status!==0?' selected':'') + '>启用</option><option value="0"' + (d.status===0?' selected':'') + '>禁用</option></select></div><div class="form-col"><label>排序</label><input id="fRoleSort" type="number" value="' + (d.sort||0) + '"></div></div>',
+      () => {
+        const body = { name: $('#fRoleName').value, chineseName: $('#fRoleCName').value, status: parseInt($('#fRoleStatus').value), sort: parseInt($('#fRoleSort').value) || 0 };
+        const method = isEdit ? 'PUT' : 'POST';
+        const url = isEdit ? '/power/role/' + id : '/power/role';
+        api(url, { method: method, body: JSON.stringify(body) }).then(res => { if (res.code === 200) { toast(isEdit ? '更新成功' : '添加成功'); closeModal(); roles(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+      });
+  }
+  if (isEdit) {
+    api('/power/role/list?pageNum=1&pageSize=500').then(r => { const list = (r.data && r.data.list) ? r.data.list : []; render(list.find(x => x.id === id) || {}); }).catch(() => render({}));
+  } else render({});
+}
+
+function toggleRoleStatus(id, currentStatus) {
+  const newStatus = currentStatus === 1 ? 0 : 1;
+  api('/power/role/status/' + id, { method: 'PUT', body: JSON.stringify({ status: newStatus }) }).then(res => { if (res.code === 200) { toast('状态更新成功'); roles(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+function showRoleAllocModal(roleId) {
+  showModal('分配资源 (角色ID: ' + roleId + ')', '<div id="allocContent">加载中...</div>', null, { wide: true });
+  Promise.all([api('/power/role/resource/' + roleId).catch(() => ({ data: [] })), api('/power/resource/list').catch(() => ({ data: [] }))]).then(([linked, all]) => {
+    const linkedList = linked.data || [];
+    const allList = all.data || [];
+    const linkedIds = new Set(linkedList.map(it => it.id));
+    let h = '<div class="btn-group" style="flex-direction:column;align-items:flex-start">';
+    allList.forEach(it => { h += '<label style="display:flex;align-items:center;gap:6px;padding:4px 0"><input type="checkbox" value="' + it.id + '" class="alloc-cb"' + (linkedIds.has(it.id)?' checked':'') + '> ' + (it.title||it.name) + (it.chineseName ? ' (' + it.chineseName + ')' : '') + ' (ID:' + it.id + ')</label>'; });
+    h += '</div><button class="btn-p btn-sm" style="margin-top:12px" onclick="saveAlloc(' + roleId + ')">💾 保存资源分配</button>';
+    $('#allocContent').innerHTML = h;
+  });
+}
+
+function saveAlloc(roleId) {
+  const ids = [];
+  $$('.alloc-cb:checked').forEach(cb => ids.push(parseInt(cb.value)));
+  const params = new URLSearchParams({ roleId: roleId });
+  ids.forEach(id => params.append('resourceIdList', id));
+  fetch(BASE + '/power/role/allocResource?' + params, { method: 'POST', headers: token ? { 'Authorization': 'Bearer ' + token } : {} }).then(r => r.json()).then(res => { if (res.code === 200) { toast('分配成功'); closeModal(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+function deleteRole(id) {
+  if (!confirm('确认删除？')) return;
+  api('/power/role/' + id, { method: 'DELETE' }).then(res => { if (res.code === 200) { toast('删除成功'); roles(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 16. 资源管理 ====================
+function resources(pageNum) {
+  pageNum = pageNum || 1;
+  let catFilter = (window._rcVal || ''), nameFilter = (window._rnVal || ''), urlFilter = (window._ruVal || '');
+  const params = new URLSearchParams({ pageNum: pageNum, pageSize: 10 });
+  if (catFilter) params.append('categoryId', catFilter);
+  if (nameFilter) params.append('nameKeyword', nameFilter);
+  if (urlFilter) params.append('urlKeyword', urlFilter);
+  api('/power/resource/search?' + params).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<div class="page-title">🔗 资源管理</div><div class="card"><div class="card-title">资源列表<button class="btn-p btn-sm" onclick="showResourceModal()">+ 添加资源</button></div><div class="search-bar"><div class="field"><label>分类ID</label><input id="rcInput" placeholder="选填" value="' + (catFilter||'') + '"></div><div class="field"><label>名称</label><input id="rnInput" placeholder="选填" value="' + (nameFilter||'') + '"></div><div class="field"><label>URL</label><input id="ruInput" placeholder="选填" value="' + (urlFilter||'') + '"></div><button class="btn-p btn-sm" onclick="window._rcVal=$(\'#rcInput\').value;window._rnVal=$(\'#rnInput\').value;window._ruVal=$(\'#ruInput\').value;resources(1)">🔍</button><button class="btn-o btn-sm" onclick="window._rcVal=\'\';window._rnVal=\'\';window._ruVal=\'\';resources(1)">重置</button></div><table><thead><tr><th>ID</th><th>分类ID</th><th>名称</th><th>URL</th><th>描述</th><th>创建时间</th><th>操作</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(res => {
+      h += '<tr><td>' + res.id + '</td><td>' + res.categoryId + '</td><td><b>' + (res.name||'') + '</b></td><td><code>' + (res.url||'') + '</code></td><td>' + (res.description||'') + '</td><td>' + (res.gmtCreate||'') + '</td><td><div class="btn-group"><button class="btn-o btn-xs" onclick="showResourceModal(' + res.id + ')">✏️</button><button class="btn-d btn-xs" onclick="deleteResource(' + res.id + ')">🗑️</button></div></td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'resources') + '</div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function showResourceModal(id) {
+  const isEdit = !!id;
+  function render(d) {
+    d = d || {};
+    showModal(isEdit ? '编辑资源' : '添加资源',
+      '<div class="form-row"><div class="form-col"><label>分类ID *</label><input id="fResCatId" type="number" value="' + (d.categoryId||'') + '"></div><div class="form-col"><label>名称 *</label><input id="fResName" value="' + (d.name||'') + '"></div><div class="form-col"><label>URL *</label><input id="fResUrl" value="' + (d.url||'') + '"></div><div class="form-col"><label>描述</label><textarea id="fResDesc">' + (d.description||'') + '</textarea></div></div>',
+      () => {
+        const body = { categoryId: parseInt($('#fResCatId').value), name: $('#fResName').value, url: $('#fResUrl').value, description: $('#fResDesc').value };
+        const method = isEdit ? 'PUT' : 'POST';
+        const url = isEdit ? '/power/resource/' + id : '/power/resource';
+        api(url, { method: method, body: JSON.stringify(body) }).then(res => { if (res.code === 200) { toast(isEdit ? '更新成功' : '添加成功'); closeModal(); resources(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+      });
+  }
+  if (isEdit) {
+    api('/power/resource/' + id).then(r => { if (r.code === 200) render(r.data); }).catch(() => render({}));
+  } else render({});
+}
+
+function deleteResource(id) {
+  if (!confirm('确认删除？')) return;
+  api('/power/resource/' + id, { method: 'DELETE' }).then(res => { if (res.code === 200) { toast('删除成功'); resources(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 17. 资源分类 ====================
+function categories() {
+  api('/power/category/list').then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<div class="page-title">📂 资源分类</div><div class="card"><div class="card-title">分类列表<button class="btn-p btn-sm" onclick="showCategoryModal()">+ 添加分类</button></div><table><thead><tr><th>ID</th><th>名称</th><th>排序</th><th>创建时间</th><th>操作</th></tr></thead><tbody>';
+    (r.data || []).forEach(c => {
+      h += '<tr><td>' + c.id + '</td><td><b>' + (c.name||'') + '</b></td><td>' + (c.sort||0) + '</td><td>' + (c.gmtCreate||'') + '</td><td><div class="btn-group"><button class="btn-o btn-xs" onclick="showCategoryModal(' + c.id + ')">✏️</button><button class="btn-d btn-xs" onclick="deleteCategory(' + c.id + ')">🗑️</button></div></td></tr>';
+    });
+    h += '</tbody></table></div>';
+    $('#pageContent').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function showCategoryModal(id) {
+  const isEdit = !!id;
+  function render(d) {
+    d = d || {};
+    showModal(isEdit ? '编辑分类' : '添加分类',
+      '<div class="form-row"><div class="form-col"><label>名称 *</label><input id="fCatName" value="' + (d.name||'') + '"></div><div class="form-col"><label>排序</label><input id="fCatSort" type="number" value="' + (d.sort||0) + '"></div></div>',
+      () => {
+        const body = { name: $('#fCatName').value, sort: parseInt($('#fCatSort').value) || 0 };
+        const method = isEdit ? 'PUT' : 'POST';
+        const url = isEdit ? '/power/category/' + id : '/power/category';
+        api(url, { method: method, body: JSON.stringify(body) }).then(res => { if (res.code === 200) { toast(isEdit ? '更新成功' : '添加成功'); closeModal(); categories(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+      });
+  }
+  if (isEdit) {
+    api('/power/category/list').then(r => { const list = r.data || []; render(list.find(c => c.id === id) || {}); }).catch(() => render({}));
+  } else render({});
+}
+
+function deleteCategory(id) {
+  if (!confirm('确认删除？')) return;
+  api('/power/category/' + id, { method: 'DELETE' }).then(res => { if (res.code === 200) { toast('删除成功'); categories(); } else toast(res.message, 'err'); }).catch(e => toast(e.message, 'err'));
+}
+
+// ==================== 18. 系统日志 ====================
+function logs() {
+  let h = '<div class="page-title">📊 系统日志</div><div class="tabs"><button class="active" onclick="logTab(\'login\')">登录日志</button><button onclick="logTab(\'operation\')">操作日志</button></div><div id="logContent"></div>';
+  $('#pageContent').innerHTML = h;
+  logTab('login');
+}
+
+function logTab(tab) {
+  $$('.tabs button').forEach((b, i) => b.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='operation')));
+  if (tab === 'login') {
+    $('#logContent').innerHTML = '<div class="card"><div class="search-bar"><div class="field"><label>账号名</label><input id="fLogAccName" placeholder="选填"></div><button class="btn-p btn-sm" onclick="searchLoginLogs(1)">🔍</button></div><div id="loginLogTable"><div class="empty">加载中...</div></div></div>';
+    searchLoginLogs(1);
+  } else {
+    $('#logContent').innerHTML = '<div class="card"><div class="search-bar"><div class="field"><label>账号名</label><input id="fOpAccName" placeholder="选填"></div><div class="field"><label>方法</label><select id="fOpMethod"><option value="">全部</option><option value="GET">GET</option><option value="POST">POST</option><option value="PUT">PUT</option><option value="DELETE">DELETE</option></select></div><button class="btn-p btn-sm" onclick="searchOpLogs(1)">🔍</button></div><div id="opLogTable"><div class="empty">加载中...</div></div></div>';
+    searchOpLogs(1);
+  }
+}
+
+function searchLoginLogs(pageNum) {
+  const name = $('#fLogAccName').value || '';
+  const params = new URLSearchParams({ pageNum: pageNum, pageSize: 10 });
+  if (name) params.append('accountName', name);
+  api('/log/account/login/list?' + params).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<table><thead><tr><th>ID</th><th>账号名</th><th>IP</th><th>登录时间</th><th>结果</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(l => { h += '<tr><td>' + l.id + '</td><td>' + (l.accountName||'') + '</td><td>' + (l.ipAddress||'') + '</td><td>' + (l.gmtCreate||'') + '</td><td><span class="tag tag-s">成功</span></td></tr>'; });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'searchLoginLogs');
+    $('#loginLogTable').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function searchOpLogs(pageNum) {
+  const name = $('#fOpAccName').value || '';
+  const method = $('#fOpMethod').value || '';
+  const params = new URLSearchParams({ pageNum: pageNum, pageSize: 10 });
+  if (name) params.append('accountName', name);
+  if (method) params.append('method', method);
+  api('/log/operation/list?' + params).then(r => {
+    if (r.code !== 200 || !r.data) return;
+    let h = '<table><thead><tr><th>ID</th><th>账号名</th><th>方法</th><th>URL</th><th>IP</th><th>耗时(ms)</th><th>时间</th></tr></thead><tbody>';
+    (r.data.list || []).forEach(l => { h += '<tr><td>' + l.id + '</td><td>' + (l.accountName||'') + '</td><td><span class="tag tag-s">' + (l.method||'') + '</span></td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (l.url||'') + '</td><td>' + (l.ip||'') + '</td><td>' + (l.spendTime||0) + '</td><td>' + (l.gmtCreate||'') + '</td></tr>'; });
+    h += '</tbody></table>' + renderPagination(r.data.total, pageNum, 10, 'searchOpLogs');
+    $('#opLogTable').innerHTML = h;
+  }).catch(e => toast(e.message, 'err'));
+}
+
+
+// ==================== WEBSOCKET 预约提醒 ====================
+let ws = null;
+let wsReconnectTimer = null;
+
+function connectWebSocket() {
+  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+  const sid = 'admin-' + Date.now();
+  const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
+  ws = new WebSocket(protocol + location.host + BASE + '/ws/' + sid);
+  ws.onopen = () => console.log('WebSocket已连接: ' + sid);
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      showWsNotification(msg.type, msg.content, msg.appointmentId);
+      playNotifySound(msg.type);
+      speakNotify(msg.type);
+    } catch (err) { console.warn('WebSocket消息解析失败', err); }
+  };
+  ws.onclose = () => {
+    ws = null;
+    // 已登录状态下 5 秒后自动重连
+    if (token) wsReconnectTimer = setTimeout(connectWebSocket, 5000);
+  };
+  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+}
+
+function closeWebSocket() {
+  if (wsReconnectTimer) { clearTimeout(wsReconnectTimer); wsReconnectTimer = null; }
+  if (ws) { ws.onclose = null; try { ws.close(); } catch (e) {} ws = null; }
+}
+
+const escapeHtml = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function showWsNotification(type, content, appointmentId) {
+  const wrap = $('#wsNotifyContainer');
+  const div = document.createElement('div');
+  div.className = 'ws-notify' + (type === 2 ? ' ws-cancel' : '');
+  const title = type === 2 ? '⚠️ 取消预约提醒' : '🔔 新预约提醒';
+  div.innerHTML = '<div class="ws-title"><span>' + title + '</span></div>'
+    + '<div class="ws-content">' + escapeHtml(content) + (appointmentId ? '（预约号：' + escapeHtml(appointmentId) + '）' : '') + '</div>'
+    + '<div style="text-align:right;margin-top:10px"><button class="btn-p btn-sm ws-ack">我知道了</button></div>';
+  // 常驻显示，仅点击"我知道了"关闭
+  div.querySelector('.ws-ack').onclick = () => div.remove();
+  wrap.appendChild(div);
+}
+
+// ---- 音频上下文与自动播放解锁 ----
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
+
+// 浏览器自动播放策略：首次用户交互时预热音频与语音合成（一次性）
+['click', 'keydown'].forEach(evt => document.addEventListener(evt, () => {
+  getAudioCtx();
+  if (window.speechSynthesis) { try { speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch (e) {} }
+}, { once: true }));
+
+function playNotifySound(type) {
+  try {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    // type=1 双音"叮咚"，type=2 低音警示
+    const tones = type === 2 ? [{ f: 440, t: 0, d: .35 }] : [{ f: 830, t: 0, d: .18 }, { f: 660, t: .2, d: .25 }];
+    tones.forEach(x => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = x.f;
+      gain.gain.setValueAtTime(.4, ctx.currentTime + x.t);
+      gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + x.t + x.d);
+      osc.start(ctx.currentTime + x.t); osc.stop(ctx.currentTime + x.t + x.d);
+    });
+  } catch (e) { /* 浏览器不支持或未授权音频时静默降级 */ }
+}
+
+function speakNotify(type) {
+  try {
+    if (!window.speechSynthesis) return;
+    const text = type === 2 ? '有患者取消预约，请注意查看' : '您有新的预约挂号，请及时处理';
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'zh-CN';
+    utter.rate = 1;
+    utter.volume = 1;
+    // 稍延迟播报，避开"叮咚"引导音
+    setTimeout(() => speechSynthesis.speak(utter), 500);
+  } catch (e) { /* 不支持语音合成时静默降级，仅保留提示音 */ }
+}
+
+// ==================== AI 知识库管理（rag-service :8000） ====================
+const AI_BASE = 'http://' + location.hostname + ':8000';
+let kbPollTimer = null;
+
+const aiApi = (url, opts = {}) => {
+  const headers = { ...opts.headers };
+  if (!(opts.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  return fetch(AI_BASE + url, { ...opts, headers }).then(r => {
+    if (r.status === 401) { doLogout(); throw new Error('登录已过期'); }
+    return r.json();
+  });
+};
+
+function kbEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function kbFmtSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(2) + ' MB';
+}
+
+function kb(pageNum) {
+  if (kbPollTimer) { clearTimeout(kbPollTimer); kbPollTimer = null; }
+  $('#pageContent').innerHTML = '<div class="page-title">📚 知识库管理</div>'
+    + '<div class="card"><div class="card-title">📤 上传文档 <span style="font-size:12px;color:var(--text3);font-weight:400">支持 pdf / docx / txt / md，单个 ≤ 10MB，上传后自动切分并向量化</span></div>'
+    + '<div style="display:flex;gap:8px;align-items:center"><input type="file" id="kbFile" accept=".pdf,.docx,.txt,.md" style="flex:1"><button class="btn-p" onclick="kbUpload()" id="kbUploadBtn" style="white-space:nowrap">上传并解析</button></div></div>'
+    + '<div class="card"><div class="card-title">🔍 召回测试 <span style="font-size:12px;color:var(--text3);font-weight:400">模拟用户提问，验证知识库能否检索到相关内容</span></div>'
+    + '<div style="display:flex;gap:8px"><input id="kbTestQ" placeholder="例如：退号怎么退费？" onkeydown="if(event.key===\'Enter\')kbTest()"><button class="btn-o" onclick="kbTest()" style="white-space:nowrap">测试召回</button></div><div id="kbTestResult" style="margin-top:12px"></div></div>'
+    + '<div class="card"><div class="card-title">📄 文档列表</div><div id="kbList">加载中…</div></div>';
+  kbLoadList(pageNum || 1);
+}
+
+function kbLoadList(pageNum) {
+  aiApi('/api/kb/doc/list?pageNum=' + pageNum + '&pageSize=10').then(res => {
+    if (res.code !== 200) { toast(res.message, 'err'); return; }
+    const pg = res.data;
+    let h = '<table><thead><tr><th>ID</th><th>文档名</th><th>大小</th><th>分块数</th><th>状态</th><th>启用</th><th>上传人</th><th>上传时间</th><th>操作</th></tr></thead><tbody>';
+    if (!pg.list.length) h += '<tr><td colspan="9" style="text-align:center;color:var(--text3)">暂无文档，请先上传</td></tr>';
+    pg.list.forEach(d => {
+      const st = d.status === 0 ? '<span class="tag tbl">解析中…</span>'
+        : d.status === 1 ? '<span class="tag tgc">已生效</span>'
+        : '<span class="tag" style="background:#fee2e2;color:#dc2626" title="' + kbEsc(d.failReason) + '">失败</span>';
+      h += '<tr><td>' + d.id + '</td><td>' + kbEsc(d.docName) + '</td><td>' + kbFmtSize(d.fileSize) + '</td><td>' + d.chunkCount + '</td><td>' + st + '</td>'
+        + '<td>' + (d.isEnable === 1 ? '<span class="tag tgc">启用</span>' : '<span class="tag" style="background:#f3f4f6;color:#9ca3af">停用</span>') + '</td>'
+        + '<td>' + kbEsc(d.uploadBy) + '</td><td>' + (d.createTime || '-') + '</td>'
+        + '<td><div class="btn-group">'
+        + '<button class="btn-o btn-xs" onclick="kbPreview(' + d.id + ')">分块预览</button>'
+        + '<button class="btn-o btn-xs" onclick="kbToggle(' + d.id + ',' + (d.isEnable === 1 ? 0 : 1) + ')">' + (d.isEnable === 1 ? '停用' : '启用') + '</button>'
+        + '<button class="btn-d btn-xs" onclick="kbDelete(' + d.id + ')">删除</button>'
+        + '</div></td></tr>';
+    });
+    h += '</tbody></table>' + renderPagination(pg.total, pg.pageNum, pg.pageSize, 'kbLoadList');
+    $('#kbList').innerHTML = h;
+    // 有解析中的文档时每3秒自动刷新状态
+    if (currentPage === 'kb' && pg.list.some(d => d.status === 0)) {
+      kbPollTimer = setTimeout(() => kbLoadList(pageNum), 3000);
+    }
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function kbUpload() {
+  const f = $('#kbFile').files[0];
+  if (!f) { toast('请先选择文件', 'err'); return; }
+  if (f.size > 10 * 1048576) { toast('文件超过 10MB 限制', 'err'); return; }
+  const fd = new FormData();
+  fd.append('file', f);
+  $('#kbUploadBtn').disabled = true;
+  aiApi('/api/kb/doc/upload', { method: 'POST', body: fd }).then(res => {
+    $('#kbUploadBtn').disabled = false;
+    if (res.code === 200) { toast('上传成功，后台解析中'); $('#kbFile').value = ''; kbLoadList(1); }
+    else toast(res.message, 'err');
+  }).catch(e => { $('#kbUploadBtn').disabled = false; toast(e.message, 'err'); });
+}
+
+function kbPreview(id) {
+  aiApi('/api/kb/doc/' + id + '/chunks').then(res => {
+    if (res.code !== 200) { toast(res.message, 'err'); return; }
+    let h = '<div style="max-height:60vh;overflow:auto">';
+    if (!res.data.chunks.length) h += '<div style="color:var(--text3)">暂无分块（可能仍在解析中）</div>';
+    res.data.chunks.forEach(c => {
+      h += '<div style="border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px"><div style="font-size:12px;color:var(--text3);margin-bottom:4px">分块 #' + c.chunkIndex + ' · ' + c.content.length + ' 字</div><div style="white-space:pre-wrap;font-size:13px">' + kbEsc(c.content) + '</div></div>';
+    });
+    h += '</div>';
+    showModal('📄 ' + kbEsc(res.data.docName) + ' · 分块预览', h, null, { wide: true });
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function kbToggle(id, val) {
+  aiApi('/api/kb/doc/' + id + '/enable', { method: 'PUT', body: JSON.stringify({ isEnable: val }) }).then(res => {
+    if (res.code === 200) { toast(res.message); kbLoadList(1); } else toast(res.message, 'err');
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function kbDelete(id) {
+  if (!confirm('确认删除该文档？删除后其知识片段将不再参与AI问答')) return;
+  aiApi('/api/kb/doc/' + id, { method: 'DELETE' }).then(res => {
+    if (res.code === 200) { toast('删除成功'); kbLoadList(1); } else toast(res.message, 'err');
+  }).catch(e => toast(e.message, 'err'));
+}
+
+function kbTest() {
+  const q = $('#kbTestQ').value.trim();
+  if (!q) { toast('请输入测试问题', 'err'); return; }
+  $('#kbTestResult').innerHTML = '<div style="color:var(--text3)">检索中…</div>';
+  aiApi('/api/kb/retrieve/test', { method: 'POST', body: JSON.stringify({ question: q, topK: 5 }) }).then(res => {
+    if (res.code !== 200) { toast(res.message, 'err'); $('#kbTestResult').innerHTML = ''; return; }
+    if (!res.data.length) { $('#kbTestResult').innerHTML = '<div style="color:var(--text3)">未检索到相关内容（知识库为空或全部停用）</div>'; return; }
+    let h = '';
+    res.data.forEach((r, i) => {
+      const pct = Math.max(0, Math.min(100, Math.round(r.score * 100)));
+      h += '<div style="border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">'
+        + '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:4px"><span>Top' + (i + 1) + ' · ' + kbEsc(r.docName) + ' · 分块#' + r.chunkIndex + '</span><span>相关度 ' + r.score + '</span></div>'
+        + '<div style="height:4px;background:#f0f0f0;border-radius:2px;margin-bottom:6px"><div style="height:4px;width:' + pct + '%;background:var(--primary);border-radius:2px"></div></div>'
+        + '<div style="white-space:pre-wrap;font-size:13px">' + kbEsc(r.content) + '</div></div>';
+    });
+    $('#kbTestResult').innerHTML = h;
+  }).catch(e => { toast(e.message, 'err'); $('#kbTestResult').innerHTML = ''; });
+}
+
+// ==================== INIT ====================
+// ECharts resize handler
+window.addEventListener('resize', function() {
+  _chartInstances.forEach(c => { try { c.resize(); } catch(e) {} });
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !$('#loginPage').classList.contains('hidden')) doLogin();
+});
+
+(function() {
+  const savedToken = localStorage.getItem('admin_token');
+  if (savedToken) {
+    token = savedToken;
+    // Validate token by getting account info
+    api('/power/account/info').then(res => {
+      if (res.code === 200) { showMain(); }
+      else { doLogout(); }
+    }).catch(() => { doLogout(); });
+  }
+})();
+</script>
+</body>
+</html>

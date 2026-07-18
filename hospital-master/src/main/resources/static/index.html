@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>医秒通</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--g:#0ac76f;--gd:#08a15a;--r:#ef4444;--bg:#f3f4f6;--c:#fff;--t:#1a1a2e;--t2:#6b7280;--b:#e5e7eb}
+body{max-width:430px;margin:0 auto;font:15px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--t);min-height:100vh;-webkit-tap-highlight-color:transparent}
+.hdr{position:sticky;top:0;z-index:99;background:linear-gradient(135deg,var(--g),var(--gd));color:#fff;padding:12px 16px;text-align:center;box-shadow:0 2px 12px rgba(10,196,111,.2)}
+.hdr h2{font-size:17px;font-weight:700;letter-spacing:.5px}
+.tbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);max-width:430px;width:100%;display:flex;background:var(--c);border-top:1px solid var(--b);z-index:99;padding-bottom:env(safe-area-inset-bottom,0)}
+.tb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:3px 0 1px;font-size:9px;color:var(--t2);cursor:pointer;border:none;background:none;transition:.08s;-webkit-tap-highlight-color:transparent}
+.tb.on{color:var(--g);font-weight:600}.tb .em{font-size:16px;line-height:1.2}.tb:active{opacity:.6}
+.pg{display:none;padding:8px 12px 96px;animation:in .2s}.pg.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--c);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.ftb{padding:10px 28px;border-radius:22px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid var(--b);background:var(--c);color:var(--t2);transition:.15s}
+.ftb.on{background:linear-gradient(135deg,var(--g),var(--gd));color:#fff;border-color:transparent;box-shadow:0 2px 10px rgba(10,196,111,.3)}
+.ftb:active{transform:scale(.95)}
+.btn{display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:22px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:active{transform:scale(.96)}.btn-p{background:linear-gradient(135deg,var(--g),var(--gd));color:#fff;width:100%;padding:11px;box-shadow:0 3px 10px rgba(10,196,111,.25)}
+.btn-r{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;width:100%;padding:9px;font-size:13px;box-shadow:0 3px 10px rgba(239,68,68,.25)}
+.btn-o{background:#fff;color:var(--g);border:1.5px solid var(--g);padding:6px 14px;font-size:12px}
+.btn-s{background:#e5e7eb;color:#9ca3af;padding:6px 14px;font-size:12px}
+.inp{width:100%;padding:10px 12px;border:1.5px solid var(--b);border-radius:10px;font-size:14px;outline:none;background:#fafbfc}
+.inp:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(10,196,111,.06);background:#fff}
+.ir{display:flex;gap:6px}.ir .inp{flex:1}
+.tag{padding:3px 10px;border-radius:15px;font-size:11px;font-weight:500;display:inline-block}
+.tbl{background:#e0f2fe;color:#0284c7}.tgc{background:#dcfce7;color:#16a34a}
+.to{background:#fff7ed;color:#c2410c}.trc{background:#fef2f2;color:#dc2626}
+.fc{background:var(--c);border-radius:12px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.fc:last-child{margin-bottom:0}
+.fc .fi{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+.fc .fb{padding:13px 14px}
+.fc .fb h3{font-size:15px;font-weight:700;margin-bottom:6px;line-height:1.4;color:var(--t)}
+.fc .fb p{font-size:13px;color:var(--t2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:2px}
+.fc .fm{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:11px;color:#9ca3af}
+.li{padding:13px 0;border-bottom:1px solid var(--b);cursor:pointer;display:flex;align-items:center;gap:10px}
+.li:active{background:#f9fafb}.li:last-child{border:none}
+.av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--g),#34d399);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.md{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.md.on{display:flex}.ms{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:430px;max-height:85vh;overflow-y:auto;padding:16px;animation:up .25s}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mh{width:32px;height:4px;background:#d1d5db;border-radius:2px;margin:0 auto 14px}
+.mt{font-size:17px;font-weight:700;text-align:center;margin-bottom:14px}
+.cd{padding:12px 0;border-bottom:1px dashed var(--b);display:flex;align-items:center;justify-content:space-between;font-size:13px}
+.em{text-align:center;padding:40px 16px;color:#9ca3af}.em .ic{font-size:40px;margin-bottom:8px}
+.sk{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}.sk .st{cursor:pointer}
+.toast{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.78);color:#fff;padding:12px 22px;border-radius:10px;z-index:999;font-size:13px;pointer-events:none;display:none}
+.scd{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;background:#f3f4f6;color:#9ca3af}
+.scd.on{background:#10b981;color:#fff;font-weight:600}
+.scd.td{background:#d1fae5;border:2px solid #10b981;color:#059669;font-weight:700;font-size:11px}
+.scd.ft{background:#f9fafb;color:#d1d5db}
+.scd.wk{color:var(--t2)}
+.tog{text-align:center;margin-top:10px;font-size:12px;color:var(--g);cursor:pointer}
+@media(prefers-color-scheme:dark){:root{--bg:#111;--c:#1f2937;--t:#f3f4f6;--t2:#9ca3af;--b:#374151}.inp{background:#111;color:#f3f4f6}}
+/* ===== AI 助手 ===== */
+.ai-b{max-width:82%;padding:10px 12px;border-radius:12px;margin-bottom:10px;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.ai-b-u{margin-left:auto;background:linear-gradient(135deg,var(--g),var(--gd));color:#fff;border-bottom-right-radius:4px;width:fit-content}
+.ai-b-a{margin-right:auto;background:var(--c);border:1px solid var(--b);border-bottom-left-radius:4px;width:fit-content}
+.ai-src{margin:-4px 0 10px;max-width:92%}
+.ai-src details{background:#f0fdf6;border:1px solid #d1fae5;border-radius:10px;padding:8px 10px;font-size:12px}
+.ai-src summary{color:var(--gd);cursor:pointer;font-weight:600}
+.ai-src .sc{background:#fff;border:1px solid var(--b);border-radius:8px;padding:8px;margin-top:6px;color:var(--t2);white-space:pre-wrap}
+.ai-inbar{position:fixed;bottom:52px;left:0;right:0;margin:0 auto;max-width:430px;width:100%;display:flex;gap:8px;align-items:flex-end;padding:8px 12px;background:var(--c);border-top:1px solid var(--b);z-index:100;box-shadow:0 -2px 8px rgba(0,0,0,.04)}
+.ai-inbar textarea{flex:1 1 auto;min-width:0;border:1.5px solid var(--b);border-radius:18px;padding:9px 12px;font-size:14px;outline:none;resize:none;font-family:inherit;background:#fafbfc;line-height:1.4;max-height:92px;overflow-y:auto}
+.ai-inbar button{width:auto;flex:0 0 auto;padding:9px 20px;border-radius:18px;font-size:14px;box-shadow:none}
+.ai-inbar textarea:focus{border-color:var(--g)}
+.ai-chip{display:inline-block;background:var(--c);border:1px solid var(--b);border-radius:16px;padding:7px 12px;font-size:12px;color:var(--t);margin:0 6px 8px 0;cursor:pointer}
+.ai-chip:active{background:#f0fdf6;border-color:var(--g)}
+.ai-cursor{display:inline-block;width:2px;height:14px;background:var(--g);vertical-align:-2px;animation:aiblink .8s infinite}
+@keyframes aiblink{50%{opacity:0}}
+</style>
+</head>
+<body>
+
+<div class="hdr"><h2 id="ht">📰 医秒通</h2></div>
+
+<!-- ===== 首页·资讯 ===== -->
+<div class="pg on" id="p0">
+  <div style="display:flex;justify-content:center;gap:12px;margin-bottom:14px"><button class="ftb on" id="fba" onclick="feedTab(0)">🌐 全部</button><button class="ftb" id="fbf" onclick="feedTab(1)">⭐ 关注</button></div>
+  <div id="fl"><div class="em"><div class="ic">📭</div>暂无资讯</div></div>
+</div>
+
+<!-- ===== 医院 ===== -->
+<div class="pg" id="p1">
+  <input class="inp" id="hs" placeholder="🔍 搜索医院" oninput="hospitals()" style="margin-bottom:10px">
+  <div id="hd" style="font-size:12px;color:var(--t2);margin:2px 0 8px;display:none">📍 已定位，按距离排序</div>
+  <div id="hl"><div class="em">定位中…</div></div>
+</div>
+
+<!-- ===== 秒杀 ===== -->
+<div class="pg" id="p2">
+  <div style="font-size:16px;font-weight:700;margin-bottom:4px">⚡ 专家号抢号</div>
+  <div style="font-size:12px;color:var(--t2);margin-bottom:8px">科室 → 医生 → 号源 → 开抢</div>
+  <div class="sk" id="skTags"></div>
+  <div id="skList"><div class="em">👆 选择上方科室</div></div>
+</div>
+
+<!-- ===== 我的 ===== -->
+<div class="pg" id="p3">
+  <div class="card" style="text-align:center">
+    <div class="av" style="width:60px;height:60px;font-size:26px;margin:0 auto" id="ua">👤</div>
+    <div style="font-size:17px;font-weight:700;margin-top:10px" id="un">未登录</div>
+    <div style="font-size:12px;color:var(--t2)" id="up"></div>
+    <button class="btn btn-p" style="margin-top:12px" onclick="showL()" id="lb">📱 手机号登录</button>
+    <button class="btn btn-o" style="margin-top:6px;display:none" onclick="doSign()" id="sb">✍️ 今日打卡</button>
+  </div>
+  <!-- 健康打卡 -->
+  <div class="card" id="sc" style="display:none">
+    <div style="display:flex;justify-content:space-around;text-align:center;margin-bottom:12px">
+      <div><b id="scc" style="font-size:26px;color:#10b981">0</b><br><span style="font-size:11px;color:var(--t2)">🔥 连续打卡</span></div>
+      <div style="width:1px;background:var(--b)"></div>
+      <div><b id="scm" style="font-size:26px;color:var(--g)">0</b><br><span style="font-size:11px;color:var(--t2)">📅 本月打卡</span></div>
+    </div>
+    <div id="sccal" style="margin-bottom:6px"></div>
+  </div>
+  <!-- 钱包 -->
+  <div class="card" id="walletCard" style="display:none;cursor:pointer" onclick="myWallet()">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div><span style="font-size:12px;color:var(--t2)">💰 虚拟钱包</span><br><span id="walletBalance" style="font-size:24px;font-weight:700;color:var(--g)">¥0.00</span></div>
+      <span style="color:var(--t2);font-size:20px">›</span>
+    </div>
+  </div>
+  <!-- 就诊卡信息待完善提示 -->
+  <div class="card" id="cardBanner" style="display:none;background:#fff7ed;border:1px solid #fbbf24">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:24px">⚠️</span>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px;color:#92400e">就诊卡信息待完善</div>
+        <div style="font-size:11px;color:#b45309">完善身份证信息后即可预约挂号</div>
+      </div>
+      <button class="btn btn-o" onclick="editDefaultCard()" style="flex-shrink:0;font-size:12px">去完善</button>
+    </div>
+  </div>
+  <div class="li" onclick="myApps()">📋 我的预约 <span style="color:var(--t2);margin-left:auto">→</span></div>
+  <div class="li" onclick="myCards()">💳 就诊卡管理 <span style="color:var(--t2);margin-left:auto">→</span></div>
+  <div class="li" onclick="myCases()">📄 病例查询 <span style="color:var(--t2);margin-left:auto">→</span></div>
+  <div class="li" onclick="myWallet()">💰 我的钱包 <span style="color:var(--t2);margin-left:auto">→</span></div>
+  <div class="li" onclick="myCredit()">📊 我的信用 <span style="color:var(--t2);margin-left:auto">→</span></div>
+  <div class="li" onclick="rank()">🏆 医生排行榜 <span style="color:var(--t2);margin-left:auto">→</span></div>
+  <div class="li" onclick="editPwd()">🔒 修改密码 <span style="color:var(--t2);margin-left:auto">→</span></div>
+  <div class="li" onclick="doLogout()" id="loBtn" style="display:none">🚪 退出登录</div>
+  <div class="li" onclick="showL()" id="swBtn">🔄 切换账号</div>
+</div>
+
+<!-- AI 助手 -->
+<div class="pg" id="p4">
+  <div class="card" id="aiTip" style="text-align:center;padding:30px 14px;display:none">
+    <div style="font-size:40px">🤖</div>
+    <div style="margin:8px 0;font-weight:600">AI 智能助手</div>
+    <div style="color:var(--t2);font-size:13px;margin-bottom:14px">登录后即可咨询挂号流程、退号退费、就诊须知等问题</div>
+    <button class="btn btn-p" onclick="showL()" style="width:60%">去登录</button>
+  </div>
+  <div id="aiBody" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="ftb" onclick="aiConvs()" style="padding:7px 16px;font-size:12px">🗂 会话记录</button>
+      <button class="ftb" onclick="aiNew()" style="padding:7px 16px;font-size:12px">✚ 新对话</button>
+    </div>
+    <div id="aiMsgs" style="padding:4px 0 120px"></div>
+    <div class="ai-inbar">
+      <textarea id="aiIn" rows="1" placeholder="输入你想问的问题，回车发送…"></textarea>
+      <button type="button" class="btn btn-p" id="aiSendBtn">发送</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tab bar -->
+<div class="tbar">
+  <div class="tb on" onclick="tab(0)"><span class="em">📰</span>资讯</div>
+  <div class="tb" onclick="tab(1)"><span class="em">🏥</span>医院</div>
+  <div class="tb" onclick="tab(2)"><span class="em">⚡</span>秒杀</div>
+  <div class="tb" onclick="tab(3)"><span class="em">👤</span>我的</div>
+  <div class="tb" onclick="tab(4)"><span class="em">🤖</span>AI助手</div>
+</div>
+
+<!-- Login sheet -->
+<div class="md" id="ld"><div class="ms" id="lbx"></div></div>
+<!-- Sheet -->
+<div class="md" id="dd"><div class="ms" id="db"></div></div>
+<div class="toast" id="tt"></div>
+
+<script>
+(function(){
+  const A='';let tk=(localStorage.getItem('h_t')||'').trim(),u=null,feedMode=0,curSpec=null,loginMode='code';
+  function $(id){return document.getElementById(id)}
+  function tm(m){const t=$('tt');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2000)}
+  async function ap(m,url,b){
+    const h={'Content-Type':'application/json'};if(tk)h['Authorization']='Bearer '+tk;
+    const o={method:m,headers:h};if(b&&m!=='GET')o.body=JSON.stringify(b);
+    let u=url;if(b&&m==='GET'){const c={};for(const[k,v]of Object.entries(b))if(v!=null&&v!=='')c[k]=v;u+='?'+new URLSearchParams(c).toString()}
+    try{const r=await fetch(u,o),j=await r.json();if(j.code===401){tm('请先登录');return null}return j}
+    catch(e){tm('网络错误');return null}
+  }
+  // ===== 就诊卡工具函数 =====
+  let _defCardCache=null;
+  let _defCardInfoCache=null;
+  /** 检查就诊卡信息是否完整（有身份证号即为完整） */
+  function isCardComplete(card){return card&&card.identificationNumber&&card.identificationNumber.trim().length>0}
+  /** 获取默认就诊卡 ID（缓存） */
+  async function defaultCard(){
+    if(!u)return null;
+    if(_defCardCache)return _defCardCache;
+    const r=await ap('GET','user/card/list/'+u.id);
+    const cards=r&&r.data?r.data:[];
+    if(!cards.length)return null;
+    _defCardCache=cards[0].id;
+    return _defCardCache;
+  }
+  /** 获取默认就诊卡完整信息（缓存） */
+  async function defaultCardInfo(){
+    if(!u)return null;
+    if(_defCardInfoCache)return _defCardInfoCache;
+    const r=await ap('GET','user/card/list/'+u.id);
+    const cards=r&&r.data?r.data:[];
+    if(!cards.length)return null;
+    _defCardInfoCache=cards[0];
+    return _defCardInfoCache;
+  }
+  window.invalidateCardCache=function(){_defCardCache=null;_defCardInfoCache=null}
+  /** 检查当前用户默认就诊卡是否完整，控制横幅显示 */
+  async function loadCardStatus(){
+    if(!u)return;
+    const r=await ap('GET','user/card/list/'+u.id);
+    const cards=r&&r.data?r.data:[];
+    if(cards.length>0){_defCardInfoCache=cards[0];$('cardBanner').style.display=isCardComplete(cards[0])?'none':'block'}
+  }
+  /** 身份证号非法提示（18位数字或末位X） */
+  function showIdPrompt(){tm('请输入18位身份证号（数字或末位X）')}
+
+  window.tab=function(i){
+    document.querySelectorAll('.tb').forEach((t,x)=>t.classList.toggle('on',x===i));
+    document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));$('p'+i).classList.add('on');
+    $('ht').textContent=['📰 医秒通','🏥 找医院','⚡ 秒杀抢号','👤 我的','🤖 AI助手'][i];
+    if(i===0)feedLoad();if(i===1)hospitals();if(i===2)splans();if(i===3)mine();if(i===4)aiInit();
+  };
+
+  // ===== Login =====
+  function renderLogin(){
+    const isCode=loginMode==='code';
+    $('lbx').innerHTML=`<div class="mh"></div><div class="mt">📱 ${isCode?'验证码登录':'密码登录'}</div>
+      <input class="inp" id="lp" placeholder="11位手机号" type="tel" maxlength="11">
+      ${isCode?`<div class="ir" style="margin-top:8px"><input class="inp" id="lc" placeholder="验证码" maxlength="6"><button class="btn btn-o" onclick="sms()" id="sbtn" style="flex-shrink:0">获取验证码</button></div>`:`<input class="inp" id="lpwd" type="password" placeholder="登录密码" style="margin-top:8px">`}
+      <div class="tog" onclick="switchMode()">${isCode?'→ 切换密码登录':'→ 切换验证码登录'}</div>
+      <button class="btn btn-p" onclick="login()" style="margin-top:10px">登 录</button>
+      <div class="tog" style="color:var(--t2);margin-top:6px" onclick="hideL()">先逛逛</div>`;
+    if(!isCode) document.getElementById('lp').value='';
+  }
+  window.switchMode=function(){loginMode=(loginMode==='code'?'pwd':'code');renderLogin()}
+  window.showL=function(){loginMode='code';renderLogin();$('ld').classList.add('on')}
+  window.hideL=function(){$('ld').classList.remove('on')}
+
+  // ===== Feed =====
+  window.sms=async function(){
+    const p=document.getElementById('lp');if(!p)return;const v=p.value.trim();
+    if(!/^1[3-9]\d{9}$/.test(v))return tm('请输入正确的11位手机号');
+    await ap('GET','user/basic/message',{phone:v});tm('验证码已发送，查看控制台');
+    let cd=60;const b=$('sbtn');b.disabled=true;const iv=setInterval(()=>{cd--;b.textContent=cd+'s';if(cd<=0){clearInterval(iv);b.textContent='获取验证码';b.disabled=false}},1000);
+  };
+  window.login=async function(){
+    const p=document.getElementById('lp');if(!p)return;const ph=p.value.trim();if(!ph)return tm('请填写手机号');
+    let r;
+    if(loginMode==='code'){
+      const c=document.getElementById('lc');if(!c||!c.value.trim())return tm('请填写验证码');
+      r=await ap('POST','user/basic/login',{phone:ph,code:c.value.trim()});
+      if(!r)return;
+      if(r.code===200){tk=(r.data||'').trim();localStorage.setItem('h_t',tk);$('ld').classList.remove('on');mine();tm('登录成功！')}
+      else if(r.message&&r.message.indexOf('请填写注册信息')!==-1)regForm(ph,c.value.trim());
+      else tm(r.message);
+    }else{
+      const w=document.getElementById('lpwd');if(!w||!w.value.trim())return tm('请填写密码');
+      r=await ap('POST','user/basic/login',{phone:ph,password:w.value.trim()});
+      if(!r)return;
+      if(r.code===200){tk=(r.data||'').trim();localStorage.setItem('h_t',tk);$('ld').classList.remove('on');mine();tm('登录成功！')}
+      else tm(r.message);
+    }
+  };
+  function regForm(ph,cd){
+    $('lbx').innerHTML=`<div class="mh"></div><div class="mt">📝 完善信息</div><p style="text-align:center;color:var(--t2);font-size:12px;margin-bottom:12px">${ph} 首次登录，请设置个人信息</p>
+      <input class="inp" id="rn" placeholder="您的姓名"><input class="inp" id="rp" type="password" placeholder="设置密码(6位以上)" style="margin-top:8px">
+      <button class="btn btn-p" onclick="doReg('${ph}','${cd}')" style="margin-top:12px">完成注册并登录</button>
+      <div class="tog" style="color:var(--t2)" onclick="showL()">← 返回登录</div>`;
+  }
+  window.doReg=async function(ph,cd){
+    const n=document.getElementById('rn'),p=document.getElementById('rp');
+    if(!n||!n.value.trim())return tm('请输入姓名');if(!p||!p.value.trim()||p.value.trim().length<6)return tm('密码至少6位');
+    const r=await ap('POST','user/basic/account/register',{phone:ph,code:cd,name:n.value.trim(),password:p.value.trim(),avatarUrl:''});
+    if(!r)return;
+    if(r.code===200){tm('✅ 注册成功，正在登录');const r2=await ap('POST','user/basic/login',{phone:ph,code:cd});if(r2&&r2.code===200){tk=r2.data;localStorage.setItem('h_t',tk);hideL();mine();tm('欢迎！')}else tm('请重新登录')}
+    else tm(r.message);
+  };
+
+  // ===== Mine =====
+  async function mine(){if(!tk)return;const r=await ap('GET','user/basic/info');if(r&&r.code===200&&r.data){u=r.data.account;const i=r.data.basicInfo;$('un').textContent=i?i.name:(u.name||'用户');$('up').textContent=u.name||'';$('lb').style.display='none';$('sb').style.display='inline-block';$('sc').style.display='block';$('loBtn').style.display='block';$('swBtn').style.display='none';loadSignStats();loadWallet();loadCardStatus()}}
+  async function loadWallet(){
+    const r=await ap('GET','payment/wallet/balance');if(r&&r.code===200&&r.data){const w=r.data;$('walletBalance').textContent='¥'+w.balanceYuan;$('walletCard').style.display='block'}else{$('walletCard').style.display='none'}
+  }
+  window.doLogout=function(){tk='';u=null;localStorage.removeItem('h_t');$('un').textContent='未登录';$('up').textContent='';$('lb').style.display='block';$('sb').style.display='none';$('sc').style.display='none';$('loBtn').style.display='none';$('swBtn').style.display='block';tm('已退出登录')}
+  // ===== 健康打卡 =====
+  async function loadSignStats(){
+    if(!u)return;
+    const r=await ap('GET','user/sign/count?userId='+u.id);if(!r||!r.data)return;
+    const d=r.data;
+    $('scc').textContent=d.continuousDays||0;
+    $('scm').textContent=d.signDays||0;
+    if(d.signed){$('sb').textContent='✅ 今日已打卡';$('sb').style.background='#d1fae5';$('sb').style.color='#059669';$('sb').style.border='none'}
+    else{$('sb').textContent='✍️ 今日打卡';$('sb').style.background='';$('sb').style.color='';$('sb').style.border=''}
+    // 连续打卡也刷新
+    const cr=await ap('GET','user/sign/continuous?userId='+u.id);
+    if(cr&&cr.data){$('scc').textContent=cr.data.continuousDays||0}
+    // 迷你日历
+    if(!d.signBitmap||!d.daysInMonth)return;
+    const now=new Date(),today=now.getDate();
+    const wkH='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;margin-bottom:4px;font-size:10px;color:var(--t2)">'+['一','二','三','四','五','六','日'].map(w=>`<span>${w}</span>`).join('')+'</div>';
+    let cells='';
+    // 计算当月1号是周几 (0=日,1=一...6=六)
+    const fd=new Date(now.getFullYear(),now.getMonth(),1).getDay();
+    const pad=fd===0?6:fd-1; // 周一=0
+    for(let i=0;i<pad;i++) cells+='<span></span>';
+    for(let i=1;i<=d.daysInMonth;i++){
+      let cls='scd';if(d.signBitmap[i-1])cls+=' on';if(i===today)cls+=' td';else if(i>today)cls+=' ft';
+      cells+=`<span class="${cls}">${i}</span>`;
+    }
+    $('sccal').innerHTML=wkH+`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center">${cells}</div>`;
+  }
+  // ===== 就诊卡管理（一人一卡，如同身份证） =====
+  window.myCards=async function(){
+    if(!u)return tm('请先登录');
+    const r=await ap('GET','user/card/list/'+u.id);const cards=r&&r.data?r.data:[];
+    let h='';
+    if(!cards.length){
+      h='<div class="em"><div class="ic">💳</div>暂无就诊卡<br><span style="font-size:12px;color:var(--t2)">请联系客服处理</span></div>';
+    }else{
+      // 显示本人就诊卡（一人一卡）
+      const c=cards[0];
+      const complete=isCardComplete(c);
+      const statusTag=complete?'<span class="tag tg" style="font-size:11px">✅ 信息完整</span>':'<span class="tag to" style="font-size:11px">⚠️ 信息待完善</span>';
+      const idShow=c.identificationNumber||'<span style="color:#f59e0b">未填写</span>';
+      const bdShow=c.birthDate?c.birthDate.split('T')[0]:'<span style="color:#f59e0b">未填写</span>';
+      h+=`<div class="card" style="border-left:3px solid var(--g)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:17px;font-weight:700">💳 我的就诊卡</span>${statusTag}
+        </div>
+        <div style="font-size:13px;line-height:2;color:var(--t)">
+          <div>👤 <b>${c.name||'—'}</b> · ${c.gender===1?'男':'女'}</div>
+          <div>📱 ${c.phone||'—'}</div>
+          <div>🆔 ${idShow}</div>
+          <div>🎂 ${bdShow}</div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px">
+          ${complete
+            ?`<button class="btn btn-o" onclick="editCardInfo(${c.relationId})">✏️ 编辑信息</button>`
+            :`<button class="btn btn-p" onclick="editCardInfo(${c.relationId})" style="width:auto;padding:8px 18px">✏️ 完善信息</button>`}
+        </div>
+      </div>`;
+    }
+    $('db').innerHTML = '<div class="mh"></div><div style="color:var(--g);cursor:pointer;font-size:13px;margin-bottom:10px" onclick="closeS()">← 关闭</div><div class="mt">💳 就诊卡管理</div>' + h;
+    $('dd').classList.add('on');
+  };
+  window.editCardInfo=async function(relationId){
+    const r=await ap('GET','user/card/list/'+u.id);const cards=r&&r.data?r.data:[];
+    const card=cards.find(c=>c.relationId===relationId);if(!card)return tm('未找到就诊卡信息');
+    const gOpts=`<option value="1" ${card.gender===1?'selected':''}>男</option><option value="2" ${card.gender===2?'selected':''}>女</option>`;
+    const bdVal=card.birthDate?card.birthDate.split('T')[0]:'';
+    $('db').innerHTML=`<div class="mh"></div><div style="color:var(--g);cursor:pointer;font-size:13px;margin-bottom:10px" onclick="myCards()">← 返回</div><div class="mt">✏️ 完善就诊卡信息</div>
+      <input class="inp" id="ecn" placeholder="姓名" value="${card.name||''}">
+      <select class="inp" id="ecg" style="margin-top:6px">${gOpts}</select>
+      <input class="inp" id="ecp" placeholder="手机号" value="${card.phone||''}" style="margin-top:6px">
+      <input class="inp" id="eci" placeholder="身份证号（18位数字或末位X）" style="margin-top:6px" value="${card.identificationNumber||''}">
+      <input class="inp" id="ecb" type="date" placeholder="出生日期" style="margin-top:6px" value="${bdVal}">
+      <button class="btn btn-p" onclick="saveCardInfo(${relationId})" style="margin-top:10px">保存</button>`;
+    $('dd').classList.add('on');
+  };
+  window.saveCardInfo=async function(relationId){
+    const nm=$('ecn'),gn=$('ecg'),ph=$('ecp'),id=$('eci'),bd=$('ecb');
+    if(!nm||!nm.value.trim())return tm('请输入姓名');
+    if(id.value.trim()&&id.value.trim().length!==18)return showIdPrompt();
+    const r=await ap('PUT','user/card/'+relationId,{name:nm.value.trim(),gender:parseInt(gn.value),phone:ph.value.trim(),identificationNumber:id.value.trim()||null,birthDate:bd.value||null});
+    if(r&&r.code===200){tm('✅ 已保存');invalidateCardCache();myCards();loadCardStatus()}else tm(r?r.message:'失败');
+  };
+  window.editDefaultCard=async function(){
+    const info=await defaultCardInfo();if(info)editCardInfo(info.relationId);else tm('暂无就诊卡');
+  };
+  window.showCardIncompletePrompt=function(){
+    $('db').innerHTML=`<div class="mh"></div><div class="mt">⚠️ 就诊卡信息不完整</div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:40px;margin:10px 0">💳</div>
+        <div style="font-size:15px;font-weight:600">请先完善就诊卡信息</div>
+        <div style="font-size:12px;color:var(--t2);margin:8px 0">需要补充身份证号等信息后才能预约挂号</div>
+      </div>
+      <button class="btn btn-p" onclick="closeS();editDefaultCard()">✏️ 去完善信息</button>
+      <div class="tog" style="color:var(--t2)" onclick="closeS()">稍后再说</div>`;
+    $('dd').classList.add('on');
+  };
+  window.deleteCard=async function(rid){if(!confirm('确定删除该就诊卡？'))return;const r=await ap('DELETE','user/card/'+rid);if(r&&r.code===200){tm('已删除');invalidateCardCache();myCards();loadCardStatus()}else tm(r?r.message:'失败')};
+  // ===== 病例查询 =====
+  window.myCases=async function(){
+    if(!u)return tm('请先登录');
+    $('db').innerHTML=`<div class="mh"></div><div style="color:var(--g);cursor:pointer;font-size:13px;margin-bottom:10px" onclick="closeS()">← 关闭</div><div class="mt">📄 我的病例</div><div class="em">加载中…</div>`;$('dd').classList.add('on');
+    const r=await ap('GET','user/case/mine');const cases=(r&&r.data)||[];
+    if(!cases.length){$('db').innerHTML=`<div class="mh"></div><div style="color:var(--g);cursor:pointer;font-size:13px;margin-bottom:10px" onclick="closeS()">← 关闭</div><div class="mt">📄 我的病例</div><div class="em"><div class="ic">📄</div>暂无病例记录<br><span style="font-size:12px;color:var(--t2)">就诊完成后医生会为您创建病例</span></div>`;return}
+    let h=`<div class="mh"></div><div style="color:var(--g);cursor:pointer;font-size:13px;margin-bottom:10px" onclick="closeS()">← 关闭</div><div class="mt">📄 我的病例（${cases.length}条）</div>`;
+    cases.sort((a,b)=>new Date(b.gmtCreate||0)-new Date(a.gmtCreate||0)).forEach(c=>{h+=`<div class="card" style="margin-bottom:8px"><div style="font-size:13px;line-height:1.8"><b>📋 病例 #${c.id||'—'}</b><br>👨‍⚕️ 医生：<b>${c.doctorName||'—'}</b><br>🏥 医院：${c.hospitalName||'—'}<br>🔬 专科：${c.specialName||'—'}<br>💳 就诊卡：${c.cardId||'—'}<br>📝 内容：${c.content||'暂无详细记录'}<br>🕐 ${c.gmtCreate||'—'}</div></div>`});$('db').innerHTML=h;
+  };
+  window.editPwd=function(){
+    if(!u)return tm('请先登录');
+    $('db').innerHTML=`<div class="mh"></div><div style="color:var(--g);cursor:pointer;font-size:13px;margin-bottom:10px" onclick="closeS()">← 关闭</div><div class="mt">🔒 修改密码</div><input class="inp" id="op" type="password" placeholder="新密码(6位以上)"><div class="ir" style="margin-top:8px"><input class="inp" id="oc" placeholder="验证码"><button class="btn btn-o" onclick="(async()=>{const v=document.getElementById('oc');if(!v)return;await ap('GET','user/basic/password/message',{phone:u.name});tm('已发送');let c=60;const b=event.target;b.disabled=true;const iv=setInterval(()=>{c--;b.textContent=c+'s';if(c<=0){clearInterval(iv);b.textContent='获取验证码';b.disabled=false}},1000)})()" style="flex-shrink:0">获取验证码</button></div><button class="btn btn-p" onclick="savePwd()" style="margin-top:10px">保存</button>`;$('dd').classList.add('on')
+  }
+  window.savePwd=async function(){
+    const pw=document.getElementById('op'),cd=document.getElementById('oc');
+    if(!pw||!pw.value.trim()||pw.value.trim().length<6)return tm('密码至少6位');if(!cd||!cd.value.trim())return tm('请填写验证码');
+    const r=await ap('PUT','user/basic/password',{name:u.name,password:pw.value.trim(),code:cd.value.trim()});tm(r&&r.code===200?'✅ 已更新':(r?r.message:'失败'));if(r&&r.code===200)closeS()
+  }
+  window.doSign=async function(){if(!u)return tm('请先登录');const r=await ap('POST','user/sign?userId='+u.id);if(r&&r.code===200){tm('✅ 打卡成功！');loadSignStats()}else tm(r?r.message:'失败')}
+  window.myApps=async function(){if(!u)return tm('请先登录');const r=await ap('GET','visit/appointment/search',{pageNum:1,pageSize:100});const m={0:'⏳待就诊',1:'❌迟到',2:'🚫取消',3:'✅完成'};const list=r&&r.data&&r.data.list?r.data.list:[];const ratedMap={};await Promise.all(list.filter(a=>a.status===3).map(async a=>{const rr=await ap('GET','visit/appointment/rate/status/'+a.appointmentId);ratedMap[a.appointmentId]=!!(rr&&rr.data)}));const h=list.length>0?list.map(a=>{const ps=a.payStatus;const payTag=ps===0?`<span class="tag to" style="cursor:pointer;font-size:10px" data-aid="${a.appointmentId}" onclick="showPayForAppointment(this.dataset.aid)">⏳待支付</span>`:ps===1?`<span class="tag tg" style="font-size:10px">✅已支付</span>`:ps===2?`<span class="tag" style="background:#f3f4f6;color:#9ca3af;font-size:10px">↩已退款</span>`:`<span class="tag" style="background:#f3f4f6;color:#9ca3af;font-size:10px">—</span>`;const rateTag=a.status===3?(ratedMap[a.appointmentId]?'<span class="tag" style="font-size:10px;background:#d1fae5;color:#065f46">✅已评分</span>':'<span class="tag" style="cursor:pointer;font-size:10px;background:#fef3c7;color:#92400e" onclick="rateAppointment(\''+a.appointmentId+'\')">⭐评分</span>'):'';const cancelTag=a.status===0?`<span class="tag" style="cursor:pointer;font-size:10px;background:#fee2e2;color:#dc2626" onclick="cancelAppointment('${a.appointmentId}')">✕ 取消</span>`:'';const dayStr=a.day?new Date(a.day).toLocaleDateString('zh-CN'):'';const tp=a.time===1?'上午':'下午';return`<div class="li" style="flex-wrap:wrap"><div style="width:100%;display:flex;justify-content:space-between;align-items:center"><b style="font-size:14px">🏥 ${a.hospitalName||''}</b><span class="tag ${a.status===3?'tgc':a.status===2?'trc':'tb'}">${m[a.status]}</span></div><div style="width:100%;font-size:13px;color:var(--t);margin:2px 0">👨‍⚕️ ${a.doctorName||''} <span style="font-size:11px;color:var(--t2)">${a.specialName||''} · ${a.clinicName||''}</span></div><div style="width:100%;font-size:12px;color:var(--t2)">📅 ${dayStr} ${tp} · 患者: ${a.name||''}</div><span style="font-size:11px;color:var(--t2);width:100%;margin-top:4px">${payTag} ${rateTag} ${cancelTag}</span></div>`}).join(''):'<div class="em">暂无预约</div>';sheet('📋 我的预约',h)}
+window.cancelAppointment=async function(id){if(!confirm('确定取消该预约？'))return;const r=await ap('PUT','visit/appointment/cancel/'+id);if(r&&r.code===200){tm('✅ 已取消');myApps()}else tm(r?r.message:'取消失败')}
+window.rateAppointment=async function(id){const stars=[1,2,3,4,5];$('db').innerHTML=`<div class="mh"></div><div style="color:var(--g);cursor:pointer;font-size:13px;margin-bottom:10px" onclick="closeS()">← 关闭</div><div class="mt">⭐ 医生评分</div><div style="text-align:center;padding:20px"><div style="font-size:16px;margin-bottom:12px">请为本次就诊评分</div><div style="font-size:36px;display:flex;justify-content:center;gap:8px" id="starDisplay">${stars.map(s=>'<span style="cursor:pointer;color:#d1d5db;font-size:40px" onmouseover="hoverStar('+s+')" onmouseout="resetStar()" onclick="selectStar(\''+id+'\','+s+')">★</span>').join('')}</div><div style="font-size:12px;color:var(--t2);margin-top:8px" id="starHint">点击星星评分</div></div>`;$('dd').classList.add('on')};window.hoverStar=function(n){document.querySelectorAll('#starDisplay span').forEach((el,i)=>{el.style.color=i<n?'#f59e0b':'#d1d5db'});document.getElementById('starHint').textContent={1:'😞 很差',2:'😐 较差',3:'🙂 一般',4:'😊 满意',5:'🥰 非常满意'}[n]||''};window.resetStar=function(){document.querySelectorAll('#starDisplay span').forEach(el=>el.style.color='#d1d5db');document.getElementById('starHint').textContent='点击星星评分'};window.selectStar=async function(id,score){document.querySelectorAll('#starDisplay span').forEach((el,i)=>{el.style.color=i<score?'#f59e0b':'#d1d5db'});const r=await ap('POST','visit/appointment/rate/'+id+'?score='+score);if(r&&r.code===200){tm('✅ 评分成功！');setTimeout(myApps,800)}else tm(r?r.message:'评分失败')}
+  window.myCredit=async function(){if(!u)return tm('请先登录');const cid=await defaultCard();if(!cid)return tm('请先添加就诊卡');const r=await ap('GET','visit/appointment/credit/current',{cardId:cid});const c=r&&r.data?r.data:null;sheet('📊 信用',c?`<div style="text-align:center;padding:16px;display:flex;justify-content:space-around;font-size:20px"><div>✅<br><b style="color:#16a34a">${c.finish||0}</b></div><div>🚫<br><b style="color:#f59e0b">${c.cancel||0}</b></div><div>❌<br><b style="color:#dc2626">${c.miss||0}</b></div></div>`:'暂无')}
+  window.rank=async function(){const r=await ap('GET','hospital/doctor/rank/top10');if(!r||!r.data||!r.data.length)return tm('暂无');const ranks=['color:#f59e0b;font-size:16px','color:#94a3b8','color:#d97706',''];sheet('🏆 医生榜',r.data.map((d,i)=>`<div class="li"><span style="font-size:20px;font-weight:800;margin-right:8px;${ranks[i]||''}">${i+1}</span><div><b>${d.doctorName}</b> <span class="tag tg">${d.jobTitle||''}</span><br><span style="font-size:11px;color:var(--t2)">${d.specialName||''} | ⭐${d.score} (${d.rateCount}评)</span></div></div>`).join(''))}
+
+  // ===== Feed =====
+  const _noticeCache={};
+  function renderFeedCard(n,fromHid){
+    const hname=n.hospitalName||('医院'+n.hospitalId)||'';
+    const img=n.picture?`<img class="fi" src="${n.picture}" onerror="this.outerHTML='<div class=fi style=display:flex;align-items:center;justify-content:center;font-size:36px;background:linear-gradient(135deg,#f0fdf4,#dcfce7)>🏥</div>'">`:`<div class="fi" style="display:flex;align-items:center;justify-content:center;font-size:36px;background:linear-gradient(135deg,#f0fdf4,#dcfce7)">🏥</div>`;
+    const dt=n.gmtCreate||n.timestamp||'';const ds=dt?new Date(dt).toLocaleString('zh-CN'):'';
+    _noticeCache[n.id]=n;
+    return `<div class="fc" style="cursor:pointer" onclick="noticeDetail(${n.id},${fromHid||'null'})">
+      <div style="position:relative">${img}<span style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.5);color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;backdrop-filter:blur(4px)">🏥 ${hname}</span></div>
+      <div class="fb"><h3>${n.title||'无标题'}</h3><p>${n.content||''}</p><div class="fm"><span>🍀 医秒通</span><span>${ds} <span style="color:var(--g)">阅读全文 ›</span></span></div></div></div>`;
+  }
+  window.noticeDetail=function(id,fromHid){
+    const n=_noticeCache[id];if(!n)return;
+    const hname=n.hospitalName||('医院'+n.hospitalId)||'';
+    const dt=n.gmtCreate||n.timestamp||'';const ds=dt?new Date(dt).toLocaleString('zh-CN'):'';
+    const back=fromHid?`<div style="color:var(--g);cursor:pointer;font-size:13px;margin-bottom:10px" onclick="hd(${fromHid})">← 返回</div>`:`<div style="color:var(--g);cursor:pointer;font-size:13px;margin-bottom:10px" onclick="closeS()">← 关闭</div>`;
+    const img=n.picture?`<img src="${n.picture}" style="width:100%;border-radius:10px;margin-bottom:12px" onerror="this.remove()">`:'';
+    $('db').innerHTML=`<div class="mh"></div>${back}${img}
+      <div style="font-size:18px;font-weight:700;line-height:1.4;margin-bottom:8px">${n.title||'无标题'}</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#9ca3af;margin-bottom:12px"><span>🏥 ${hname}</span><span>${ds}</span></div>
+      <div style="font-size:14px;color:var(--t);line-height:1.8;white-space:pre-wrap;word-break:break-word;padding-bottom:20px">${n.content||''}</div>`;
+    $('dd').classList.add('on');$('db').scrollTop=0;
+  }
+  window.feedTab=function(m){feedMode=m;document.getElementById('fba').classList.toggle('on',m===0);document.getElementById('fbf').classList.toggle('on',m===1);feedLoad()};
+  async function feedLoad(){
+    if(feedMode===1&&!u){$('fl').innerHTML='<div class="em"><div class="ic">🔒</div>请登录后查看关注资讯</div>';return}
+    if(feedMode===1){
+      const r=await ap('GET','follow/notices');if(!r||!r.data||!r.data.length){$('fl').innerHTML='<div class="em"><div class="ic">📭</div>你关注的医院暂无资讯<br><span style="font-size:12px;color:var(--t2)">去"医院"页面关注更多医院吧</span></div>';return}
+      $('fl').innerHTML=r.data.map(n=>renderFeedCard(n)).join('');return
+    }
+    const r=await ap('GET','hospital/notice/list/all');
+    if(!r||!r.data||!r.data.length){$('fl').innerHTML='<div class="em"><div class="ic">📭</div>暂无资讯，去管理端发布吧</div>';return}
+    $('fl').innerHTML=r.data.map(n=>renderFeedCard(n)).join('');
+  }
+
+  // ===== Hospitals =====
+  let uLoc=null;function dist(l1,lo1,l2,lo2){const R=6371,dx=(lo2-lo1)*Math.PI/180,dy=(l2-l1)*Math.PI/180;const a=Math.sin(dy/2)**2+Math.cos(l1*Math.PI/180)*Math.cos(l2*Math.PI/180)*Math.sin(dx/2)**2;return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))*100)/100}
+  window.hospitals=async function(){const q=$('hs')?$('hs').value.trim():'';const r=await ap('GET','hospital/info/list',{pageNum:1,pageSize:50,name:q||undefined});if(!r||!r.data){$('hl').innerHTML='<div class="em">加载失败</div>';return}let list=r.data.list||[];if(uLoc){list.forEach(h=>h._d=h.latitude?dist(uLoc.lat,uLoc.lng,h.latitude,h.longitude):99999);list.sort((a,b)=>a._d-b._d);$('hd').style.display='block'}$('hl').innerHTML=list.length?list.map(h=>{const dT=uLoc?` <span class="tag to">${h._d<100?h._d+'km':'>100km'}</span>`:'';const av=h.picture?`<img class="av" src="${h.picture}" onerror="this.outerHTML='<div class=av>🏥</div>'" style="object-fit:cover">`:'<div class="av">🏥</div>';return`<div class="li" onclick="hd(${h.id})">${av}<div style="flex:1"><b>${h.name}</b>${dT}<div style="font-size:12px;color:var(--t2)">${h.address||''}</div></div><span style="color:var(--g);font-size:20px">›</span></div>`}).join(''):'<div class="em"><div class="ic">🏥</div>暂无医院</div>'}
+  window.hd=async function(id){const ph={};if(u&&u.id)ph.userId=u.id;const r=await ap('GET','hospital/info/'+id,ph);if(!r||!r.data)return tm('加载失败');const h=r.data;let fb='';if(u){try{const fr=await ap('GET','follow/or/not/'+id);fb=fr&&fr.code===200&&fr.data?'<button class="btn btn-s" onclick="dofollow('+h.id+',false)" style="margin:6px 0">✅ 已关注 点此取消</button>':'<button class="btn btn-o" onclick="dofollow('+h.id+',true)" style="margin:6px 0">⭐ 关注</button>'}catch(e){}}let html=`<div class="mh"></div><div class="back" style="color:var(--g);cursor:pointer;margin-bottom:10px;font-size:13px" onclick="closeS()">← 返回</div><div style="font-size:18px;font-weight:700">🏥 ${h.name}</div><div style="font-size:13px;color:var(--t2)">📍 ${h.address||''} 📞 ${h.phone||''}</div><div style="margin:6px 0;font-size:13px">${h.description||''}</div>${fb}<hr style="margin:12px 0;border-color:var(--b)"><div style="font-weight:700;margin-bottom:8px">📋 科室</div><div id="sp">加载中…</div><hr style="margin:12px 0;border-color:var(--b)"><div style="font-weight:700;margin-bottom:8px">📰 资讯</div><div id="nl">加载中…</div>`;$('db').innerHTML=html;$('dd').classList.add('on');const sr=await ap('GET','hospital/special/list/'+id,{pageNum:1,pageSize:30});if(sr&&sr.data){const l=sr.data.list||[];$('sp').innerHTML=l.map(s=>`<div class="li" onclick="sd(${h.id},${s.id})"><div style="flex:1"><b>${s.name}</b><br><span style="font-size:11px;color:var(--t2)">${s.description||''}</span></div><span style="color:var(--g)">›</span></div>`).join('')}const nr=await ap('GET','hospital/notice/list',{hospitalId:id});if(nr&&nr.data&&nr.data.length){$('nl').innerHTML=nr.data.map(n=>renderFeedCard(n,id)).join('')}else{$('nl').innerHTML='<div style="color:#9ca3af;font-size:12px;text-align:center;padding:10px">暂无</div>'}};
+  window.sd=async function(hid,sid){const r=await ap('GET','hospital/doctor/list/special/outpatient',{specialId:sid,pageNum:1,pageSize:30});const l=(r&&r.data&&r.data.list)||[];let h=`<div class="mh"></div><div class="back" style="color:var(--g);cursor:pointer;margin-bottom:10px;font-size:13px" onclick="hd(${hid})">← 返回</div><div style="font-weight:700;margin-bottom:8px">👨‍⚕️ 医生</div>`;h+=l.length?l.map(d=>`<div class="li" onclick="dp(${hid},${sid},${d.id})"><div style="flex:1"><b>${d.name}</b> <span class="tag tg">${d.jobTitle||''}</span><br><span style="font-size:11px;color:var(--t2)">${d.specialty||''}</span></div><span style="color:var(--g);font-weight:600">挂号 ›</span></div>`).join(''):'<div class="em">暂无</div>';$('db').innerHTML=h}
+  window.dp=async function(hid,sid,did){const days=[];for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()+i);days.push(d.toISOString().split('T')[0])}$('db').innerHTML=`<div class="mh"></div><div class="back" style="color:var(--g);cursor:pointer;margin-bottom:10px;font-size:13px" onclick="sd(${hid},${sid})">← 返回</div><div style="font-weight:700;margin-bottom:8px">⏳ 加载号源中…</div>`;const all=[],seenPlan=new Set();const dayResults=await Promise.all(days.map(day=>ap('GET','visit/plan/list',{day,doctorId:did,pageNum:1,pageSize:200})));dayResults.forEach(r=>{if(r&&r.data&&r.data.list)r.data.list.forEach(p=>{const k=p.id;if(!seenPlan.has(k)){seenPlan.add(k);all.push(p)}})});if(!all.length){$('db').innerHTML=`<div class="mh"></div><div class="back" style="color:var(--g);cursor:pointer;margin-bottom:10px;font-size:13px" onclick="sd(${hid},${sid})">← 返回</div><div class="em"><div class="ic">📅</div>该医生未来7天无号源</div>`;return}const dName=all[0].doctorName||'?';const hName=all[0].hospitalName||'';const sName=all[0].specialName||'';const sl=await Promise.all(all.map(async s=>{const sr=await ap('GET','visit/seckill/'+s.id+'/stock');const st=sr&&sr.code===200?sr.data.stock:0;const so=st<=0;return`<div class="cd"><span>📅 ${s.day||'?'} ${s.time===1?'上午':'下午'} <b style="color:${so?'#9ca3af':'#ef4444'}">剩${st}</b></span><button class="btn ${so?'btn-s':'btn-r'}" ${so?'disabled':''} onclick="sg(${s.id},${so})">${so?'已抢完':'抢!'}</button></div>`}));$('db').innerHTML=`<div class="mh"></div><div class="back" style="color:var(--g);cursor:pointer;margin-bottom:10px;font-size:13px" onclick="sd(${hid},${sid})">← 返回</div><div class="card" style="border-left:3px solid #ef4444"><div style="font-weight:700;font-size:15px">👨‍⚕️ ${dName}</div><div style="font-size:11px;color:var(--t2);margin-bottom:6px">${hName} | ${sName}</div>${sl.join('')}</div>`}
+  window.apt=async function(pid){if(!u)return tm('请先登录');const ci=await defaultCardInfo();if(!ci)return tm('请先添加就诊卡');if(!isCardComplete(ci))return showCardIncompletePrompt();const r=await ap('POST','visit/seckill/'+pid+'?timePeriod=1');if(r&&r.code===200){tm('🔒 号源已锁定，请完成支付');closeS();if(r.data&&r.data.needPay){const orderId=r.data.orderId;const paymentId=r.data.paymentId||null;await showPayForAppointment(orderId,paymentId)}}else tm(r?r.message:'失败')}
+  window.dofollow=async function(hid,f){if(!u)return tm('请先登录');const r=await ap('PUT','follow/'+hid+'/'+(f?'true':'false'));if(r&&r.code===200){tm(f?'✅ 已关注':'已取消');hd(hid)}else if(r)tm(r.message)}
+
+  // ===== Seckill =====
+  async function splans(){
+    const r=await ap('GET','hospital/special/list',{pageNum:1,pageSize:20});
+    if(r&&r.data&&r.data.list){
+      const tags='<span class="tag '+(curSpec===null?'tgc':'tbl')+' st" onclick="pickS(null)">📋 全部</span>'+
+        r.data.list.map(s=>`<span class="tag ${curSpec===s.id?'tgc':'tbl'} st" onclick="pickS(${s.id})">${s.name}</span>`).join('');
+      $('skTags').innerHTML=tags
+    }
+    loadS(curSpec)
+  }
+  window.pickS=function(sid){curSpec=sid;splans()}
+  async function loadS(sid){
+    $('skList').innerHTML='<div class="em">⏳ 加载号源中…</div>';
+    const days=[];for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()+i);days.push(d.toISOString().split('T')[0])}
+    const all=[],seenPlan=new Set();
+    const dayResults=await Promise.all(days.map(day=>ap('GET','visit/plan/list',{day,specialId:sid,pageNum:1,pageSize:200})));
+    dayResults.forEach(r=>{if(r&&r.data&&r.data.list)r.data.list.forEach(p=>{const k=p.doctorId+'_'+p.day+'_'+p.time;if(!seenPlan.has(k)){seenPlan.add(k);all.push(p)}})});
+    if(!all.length){$('skList').innerHTML='<div class="em"><div class="ic">📅</div>'+(sid?'该科室未来7天无号源':'暂无号源')+'</div>';return}
+    const g={};for(const p of all){const k=p.doctorId;if(!g[k])g[k]={d:p,ss:[]};g[k].ss.push(p)}
+    const cards=[];for(const v of Object.values(g)){const d=v.d,ss=v.ss;const sl=await Promise.all(ss.map(async s=>{const sr=await ap('GET','visit/seckill/'+s.id+'/stock');const st=sr&&sr.code===200?sr.data.stock:0;const so=st<=0;return`<div class="cd"><span>📅 ${s.day||'?'} ${s.time===1?'上午':'下午'} <b style="color:${so?'#9ca3af':'#ef4444'}">剩${st}</b></span><button class="btn ${so?'btn-s':'btn-r'}" ${so?'disabled':''} onclick="sg(${s.id},${so})">${so?'已抢完':'抢!'}</button></div>`}));cards.push(`<div class="card" style="border-left:3px solid #ef4444"><div style="font-weight:700;font-size:15px">👨‍⚕️ ${d.doctorName||'?'}</div><div style="font-size:11px;color:var(--t2)">${d.hospitalName||''} | ${d.specialName||''}</div>${sl.join('')}</div>`)}
+    $('skList').innerHTML=cards.join('')
+  }
+  window.sg=async function(pid,so){if(!u)return tm('请先登录');if(so)return;const ci=await defaultCardInfo();if(!ci)return tm('请先添加就诊卡');if(!isCardComplete(ci))return showCardIncompletePrompt();const r=await ap('POST','visit/seckill/'+pid+'?timePeriod=3');if(r&&r.code===200){tm('🔒 号源已锁定，请完成支付');loadS(curSpec);if(r.data&&r.data.needPay){const orderId=r.data.orderId;const paymentId=r.data.paymentId||null;await showPayForAppointment(orderId,paymentId)}}else if(r)tm(r.message)}
+
+  // ===== 支付功能 =====
+  window.showPayForAppointment=async function(orderId, paymentId){
+    // 对标黑马点评架构：秒杀只返回orderId，支付订单由Stream消费者异步创建
+    // 立即显示加载状态，轮询等待消费者完成MySQL写入
+    $('db').innerHTML=`<div class="mh"></div><div class="mt">💳 正在生成支付订单…</div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:40px;margin:16px 0">⏳</div>
+        <div style="font-size:15px;color:var(--t)">号源已锁定，正在为您生成支付订单…</div>
+        <div style="font-size:12px;color:var(--t2);margin-top:8px">订单号: ${orderId||'—'}</div>
+        <div style="font-size:12px;color:var(--r);margin-top:6px">⏱ 请在15分钟内完成支付，超时将自动释放号源</div>
+      </div>`;
+    $('dd').classList.add('on');
+    // 轮询获取支付订单（Stream消费者异步创建，间隔1s，最多等10s）
+    let payData=null;
+    for(let i=0;i<10;i++){
+      await new Promise(r=>setTimeout(r,1000));
+      const pr=await ap('GET','payment/order/findByAppointment',{appointmentId:orderId});
+      if(pr&&pr.code===200&&pr.data){payData=pr.data;break}
+    }
+    if(!payData){return showPayLater(orderId)}
+    showPayDialog(payData)
+  };
+  function showPayDialog(o){
+    const exp=o.expireTime?Math.max(0,Math.floor((new Date(o.expireTime)-new Date())/1000)):900;
+    const min=Math.floor(exp/60),sec=exp%60;
+    $('db').innerHTML=`<div class="mh"></div><div class="mt">💳 确认支付</div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:12px;color:var(--t2)">支付完成后即预约成功</div>
+        <div style="font-size:13px;color:var(--t);margin:4px 0 14px">${o.paymentNo||'—'}</div>
+        <div style="font-size:36px;font-weight:700;color:var(--g)">¥${o.amountYuan||'0.00'}</div>
+        <div style="font-size:12px;color:var(--t2);margin-top:8px">挂号费</div>
+        <div style="font-size:12px;color:var(--r);margin-top:6px">⏱ 剩余 <span id="payCountdown">${min}:${sec<10?'0'+sec:sec}</span></div>
+      </div>
+      <button class="btn btn-p" onclick="payOrder('${o.paymentId}')" id="payBtn">🔒 确认支付 ¥${o.amountYuan||'0.00'}</button>
+      <div class="tog" style="color:var(--t2)" onclick="closeS()">稍后支付</div>`;
+    $('dd').classList.add('on');
+    // 倒计时
+    if(exp>0){clearInterval(window._payCd);window._payCd=setInterval(()=>{
+      const el=$('payCountdown');if(!el){clearInterval(window._payCd);return}
+      let t=parseInt(el.textContent.split(':')[0])*60+parseInt(el.textContent.split(':')[1])-1;
+      if(t<=0){el.textContent='0:00';clearInterval(window._payCd);$('payBtn').disabled=true;$('payBtn').textContent='⏳ 已过期';$('payBtn').style.background='#9ca3af'}else{el.textContent=Math.floor(t/60)+':'+(t%60<10?'0'+t%60:t%60)}
+    },1000)}
+  }
+  window.payOrder=async function(paymentId){
+    if(!u)return tm('请先登录');
+    $('payBtn').disabled=true;$('payBtn').textContent='⏳ 支付中…';
+    const r=await ap('POST','payment/pay',{paymentId,accountId:u.id});
+    if(r&&r.code===200){
+      clearInterval(window._payCd);
+      $('db').innerHTML=`<div class="mh"></div><div class="mt">🎉 预约成功</div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:48px;margin:10px 0">✅</div>
+          <div style="font-size:18px;font-weight:700;color:var(--g)">预约成功！</div>
+          <div style="font-size:13px;color:var(--t2);margin:8px 0">支付金额 ¥${r.data.amountYuan||'0.00'} · ${r.data.paymentNo||''}</div>
+          <div style="font-size:12px;color:var(--t2)">请按时前往医院就诊</div>
+        </div>
+        <button class="btn btn-p" onclick="closeS()">✔ 完成</button>`;
+      loadWallet();
+      tm('🎉 预约成功！请按时就诊');
+    }else{
+      $('payBtn').disabled=false;$('payBtn').textContent='🔒 重新支付';
+      tm(r?r.message:'支付失败');
+    }
+  };
+  function showPayLater(orderId){
+    $('db').innerHTML=`<div class="mh"></div><div class="mt">⏳ 支付订单生成中</div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:48px;margin:10px 0">🔒</div>
+        <div style="font-size:16px;font-weight:600;color:var(--t)">号源已锁定，支付订单生成中…</div>
+        <div style="font-size:13px;color:var(--t2);margin:8px 0">订单号: ${orderId||'—'}</div>
+        <div style="font-size:12px;color:var(--r)">⏱ 请稍后重试，15分钟内完成支付即可</div>
+      </div>
+      <button class="btn btn-p" onclick="closeS();retryShowPay('${orderId}')">🔄 刷新重试</button>
+      <button class="btn btn-o" onclick="closeS();myApps()" style="width:100%;margin-top:6px">📋 查看我的预约</button>
+      <div class="tog" style="color:var(--t2)" onclick="closeS()">先看看</div>`;
+    $('dd').classList.add('on')
+  }
+  window.retryShowPay=async function(orderId){await showPayForAppointment(orderId)}
+  window.myWallet=async function(){
+    const r=await ap('GET','payment/wallet/balance');if(!r||!r.data)return tm('钱包未初始化');
+    const w=r.data;
+    let h=`<div class="card" style="text-align:center">
+      <div style="font-size:12px;color:var(--t2)">💰 我的虚拟钱包</div>
+      <div style="font-size:36px;font-weight:700;color:var(--g);margin:8px 0">¥${w.balanceYuan||'0.00'}</div>
+    </div>`;
+    // 交易记录
+    const fr=await ap('GET','payment/flow/list',{pageNum:1,pageSize:20});
+    const flows=fr&&fr.data&&fr.data.list?fr.data.list:[];
+    h+=`<div style="font-weight:600;margin:10px 0 6px">📋 交易明细</div>`;
+    if(!flows.length){h+=`<div class="em" style="padding:16px">暂无交易记录</div>`}
+    else{flows.forEach(f=>{
+      const icon=f.flowType===1?'💳':'💵';
+      const col=f.flowType===1?'var(--r)':'var(--g)';
+      const sign=f.flowType===1?'−':'+';
+      h+=`<div class="cd"><span>${icon} ${f.flowTypeDesc||''}<br><span style="font-size:10px;color:var(--t2)">${f.remark||''}</span></span><span style="color:${col};font-weight:600">${sign}¥${(Math.abs(f.amount||0)/100).toFixed(2)}</span></div>`
+    })}
+    sheet('💰 我的钱包',h)
+  };
+  window.closeS=function(){$('dd').classList.remove('on')}
+  function sheet(t,html){$('db').innerHTML=`<div class="mh"></div><div style="color:var(--g);cursor:pointer;font-size:13px;margin-bottom:10px" onclick="closeS()">← 关闭</div><div class="mt">${t}</div>${html}`;$('dd').classList.add('on')}
+
+  // ===== AI 智能助手（rag-service :8000） =====
+  const AI_BASE='http://'+location.hostname+':8000';
+  const AI_SUGS=['怎么预约挂号？','退号怎么退费？','忘带就诊卡怎么办？','爽约会有什么影响？'];
+  let aiBusy=false,aiWelcomed=false,aiConvId=null;
+  function aiEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+  window.aiInit=function(){
+    const login=!!tk;
+    $('aiTip').style.display=login?'none':'block';
+    $('aiBody').style.display=login?'block':'none';
+    if(login)setTimeout(function(){const t=$('aiIn');if(t)t.focus()},150);
+    if(!login||aiWelcomed)return;
+    aiWelcomed=true;
+    // 自动恢复最近一次会话，找回历史对话
+    fetch(AI_BASE+'/api/chat/conversations',{headers:{'Authorization':'Bearer '+tk}}).then(r=>r.json()).then(res=>{
+      if(res.code===200&&res.data&&res.data.length)aiLoadConv(res.data[0].id);
+      else aiWelcome();
+    }).catch(()=>aiWelcome());
+  };
+  function aiWelcome(){
+    aiConvId=null;$('aiMsgs').innerHTML='';
+    aiBubble('a','你好！我是医秒通AI助手小医 🤖\n可以问我挂号流程、退号退费、就诊须知等问题～');
+    const w=document.createElement('div');w.id='aiSugs';w.style.cssText='margin:4px 0 10px';
+    w.innerHTML=AI_SUGS.map(s=>`<span class="ai-chip" onclick="aiAsk('${s}')">${s}</span>`).join('');
+    $('aiMsgs').appendChild(w);
+  }
+  function aiBubble(kind,text){
+    const d=document.createElement('div');d.className='ai-b '+(kind==='u'?'ai-b-u':'ai-b-a');
+    d.innerHTML=aiEsc(text);$('aiMsgs').appendChild(d);aiScroll();return d;
+  }
+  function aiSources(list){
+    if(!list||!list.length)return;
+    const d=document.createElement('div');d.className='ai-src';
+    d.innerHTML='<details><summary>📚 引用知识库片段 ×'+list.length+'</summary>'
+      +list.map(s=>'<div class="sc"><b>《'+aiEsc(s.docName)+'》 片段#'+s.chunkIndex+(s.score!=null?' · 相关度 '+s.score:'')+'</b><br>'+aiEsc(s.content)+'</div>').join('')+'</details>';
+    $('aiMsgs').appendChild(d);aiScroll();
+  }
+  function aiScroll(){window.scrollTo({top:document.body.scrollHeight})}
+  window.aiAsk=function(q){$('aiIn').value=q;aiSend()};
+  window.aiSend=async function(){
+    const q=($('aiIn').value||'').trim();
+    if(!q){tm('请输入问题');return}
+    if(!tk){tm('请先登录');showL();return}
+    if(aiBusy)return;
+    aiBusy=true;$('aiSendBtn').disabled=true;
+    const sug=$('aiSugs');if(sug)sug.remove();
+    aiBubble('u',q);$('aiIn').value='';$('aiIn').style.height='auto';
+    const bub=aiBubble('a','');bub.innerHTML='<span class="ai-cursor"></span>';
+    let text='',srcs=null,doneEv=null;
+    try{
+      const r=await fetch(AI_BASE+'/api/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},body:JSON.stringify({question:q,conversationId:aiConvId})});
+      if(r.status===401){bub.remove();tm('请先登录');showL();return}
+      // 限流/额度等前置校验失败时返回 JSON 而非事件流
+      if((r.headers.get('content-type')||'').includes('application/json')){
+        const j=await r.json();bub.innerHTML=aiEsc(j.message||'请求失败');return
+      }
+      if(!r.ok||!r.body)throw new Error('服务不可用');
+      const rd=r.body.getReader(),dec=new TextDecoder();let buf='';
+      while(true){
+        const {done,value}=await rd.read();if(done)break;
+        buf+=dec.decode(value,{stream:true});
+        const parts=buf.split('\n\n');buf=parts.pop();
+        for(const p of parts){
+          if(!p.startsWith('data: '))continue;
+          let ev;try{ev=JSON.parse(p.slice(6))}catch(e){continue}
+          if(ev.type==='sources')srcs=ev.sources;
+          else if(ev.type==='delta'){text+=ev.content;bub.innerHTML=aiEsc(text)+'<span class="ai-cursor"></span>';aiScroll()}
+          else if(ev.type==='done')doneEv=ev;
+          else if(ev.type==='error'){text=text||ev.message}
+        }
+      }
+      bub.innerHTML=aiEsc(text||'抱歉，我暂时无法回答，请稍后再试');
+      aiSources(srcs);
+      if(doneEv){
+        aiConvId=doneEv.conversationId;
+        if(doneEv.toolUsed){const n=document.createElement('div');n.style.cssText='margin:-4px 0 6px;font-size:11px;color:var(--t2)';n.textContent='🔍 已查询实时号源数据';$('aiMsgs').appendChild(n)}
+        if(doneEv.assistantMsgId)aiFbRow(doneEv.assistantMsgId,0)
+      }
+    }catch(e){bub.innerHTML=aiEsc('网络异常，请确认AI服务已启动')}
+    finally{aiBusy=false;$('aiSendBtn').disabled=false;aiScroll()}
+  };
+
+  window.aiNew=function(){aiWelcome();tm('已开启新对话')};
+  window.aiConvs=async function(){
+    const r=await fetch(AI_BASE+'/api/chat/conversations',{headers:{'Authorization':'Bearer '+tk}}).then(x=>x.json()).catch(()=>null);
+    if(!r||r.code!==200){tm('加载失败');return}
+    let h=r.data.length?'':'<div style="color:var(--t2);text-align:center;padding:20px 0">暂无历史会话</div>';
+    r.data.forEach(c=>{
+      h+=`<div class="cd" style="align-items:center"><span style="flex:1;overflow:hidden;cursor:pointer" onclick="aiLoadConv(${c.id});closeS()">💬 ${aiEsc(c.title)}<br><span style="font-size:10px;color:var(--t2)">${c.updateTime}</span></span><button class="btn btn-o" style="padding:4px 10px;font-size:11px;flex-shrink:0" onclick="aiDelConv(${c.id})">删除</button></div>`;
+    });
+    sheet('🗂 会话记录',h);
+  };
+  window.aiDelConv=async function(id){
+    if(!confirm('删除该会话及全部消息记录？'))return;
+    const r=await fetch(AI_BASE+'/api/chat/conversation/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+tk}}).then(x=>x.json()).catch(()=>null);
+    if(r&&r.code===200){tm('已删除');if(aiConvId===id)aiWelcome();aiConvs()}else tm((r&&r.message)||'删除失败');
+  };
+  window.aiLoadConv=async function(id){
+    const r=await fetch(AI_BASE+'/api/chat/messages/'+id,{headers:{'Authorization':'Bearer '+tk}}).then(x=>x.json()).catch(()=>null);
+    if(!r||r.code!==200){tm((r&&r.message)||'加载失败');aiWelcome();return}
+    aiConvId=id;$('aiMsgs').innerHTML='';
+    r.data.forEach(m=>{
+      aiBubble(m.role==='user'?'u':'a',m.content);
+      if(m.role==='assistant'){aiSources(m.sources);aiFbRow(m.id,m.feedback)}
+    });
+    aiScroll();
+  };
+  function aiFbRow(msgId,cur){
+    const d=document.createElement('div');d.style.cssText='margin:-4px 0 10px;font-size:14px';
+    d.innerHTML=`<span style="cursor:pointer;opacity:${cur===1?1:.35}" onclick="aiFb(this,${msgId},1)">👍</span> <span style="cursor:pointer;opacity:${cur===2?1:.35}" onclick="aiFb(this,${msgId},2)">👎</span>`;
+    $('aiMsgs').appendChild(d);
+  }
+  window.aiFb=async function(el,msgId,val){
+    const send=el.style.opacity==='1'?0:val; // 再点一次=取消
+    const r=await fetch(AI_BASE+'/api/chat/feedback',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tk},body:JSON.stringify({messageId:msgId,feedback:send})}).then(x=>x.json()).catch(()=>null);
+    if(r&&r.code===200){
+      el.parentElement.querySelectorAll('span').forEach((s,i)=>s.style.opacity=(send!==0&&i===send-1)?'1':'.35');
+      if(send!==0)tm('感谢反馈');
+    }
+  };
+
+  // 输入框事件绑定：回车发送（Shift+Enter换行）、中文输入法选词回车不误发、高度自适应
+  (function(){
+    const ta=$('aiIn');
+    if(!ta)return;
+    ta.addEventListener('keydown',function(e){
+      if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();aiSend()}
+    });
+    ta.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,92)+'px'});
+    $('aiSendBtn').addEventListener('click',function(){aiSend()});
+  })();
+
+  // ===== Init =====
+  if(tk)mine();feedLoad();
+  if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{uLoc={lat:p.coords.latitude,lng:p.coords.longitude};$('hd').style.display='block';hospitals()},()=>{hospitals()},{timeout:5000})}else hospitals()
+  $('dd').addEventListener('click',function(e){if(e.target===this)closeS()})
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.liyu.hospital.mapper.PaymentWalletMapper">
+  <resultMap id="BaseResultMap" type="cn.liyu.hospital.entity.PaymentWallet">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="account_id" jdbcType="BIGINT" property="accountId" />
+    <result column="balance" jdbcType="BIGINT" property="balance" />
+    <result column="version" jdbcType="INTEGER" property="version" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, account_id, balance, version, gmt_create, gmt_modified
+  </sql>
+
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from payment_wallet
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+
+  <select id="selectByAccountId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" />
+    from payment_wallet
+    where account_id = #{accountId,jdbcType=BIGINT}
+  </select>
+
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from payment_wallet where id = #{id,jdbcType=BIGINT}
+  </delete>
+
+  <insert id="insert" parameterType="cn.liyu.hospital.entity.PaymentWallet" useGeneratedKeys="true" keyProperty="id">
+    insert into payment_wallet (account_id, balance, version, gmt_create, gmt_modified)
+    values (#{accountId,jdbcType=BIGINT}, #{balance,jdbcType=BIGINT}, #{version,jdbcType=INTEGER},
+            #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP})
+  </insert>
+
+  <insert id="insertSelective" parameterType="cn.liyu.hospital.entity.PaymentWallet" useGeneratedKeys="true" keyProperty="id">
+    insert into payment_wallet
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="accountId != null">account_id,</if>
+      <if test="balance != null">balance,</if>
+      <if test="version != null">version,</if>
+      <if test="gmtCreate != null">gmt_create,</if>
+      <if test="gmtModified != null">gmt_modified,</if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="accountId != null">#{accountId,jdbcType=BIGINT},</if>
+      <if test="balance != null">#{balance,jdbcType=BIGINT},</if>
+      <if test="version != null">#{version,jdbcType=INTEGER},</if>
+      <if test="gmtCreate != null">#{gmtCreate,jdbcType=TIMESTAMP},</if>
+      <if test="gmtModified != null">#{gmtModified,jdbcType=TIMESTAMP},</if>
+    </trim>
+  </insert>
+
+  <update id="updateByPrimaryKeySelective" parameterType="cn.liyu.hospital.entity.PaymentWallet">
+    update payment_wallet
+    <set>
+      <if test="accountId != null">account_id = #{accountId,jdbcType=BIGINT},</if>
+      <if test="balance != null">balance = #{balance,jdbcType=BIGINT},</if>
+      <if test="version != null">version = #{version,jdbcType=INTEGER},</if>
+      <if test="gmtCreate != null">gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},</if>
+      <if test="gmtModified != null">gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},</if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+
+  <update id="updateByPrimaryKey" parameterType="cn.liyu.hospital.entity.PaymentWallet">
+    update payment_wallet
+    set account_id = #{accountId,jdbcType=BIGINT},
+        balance = #{balance,jdbcType=BIGINT},
+        version = #{version,jdbcType=INTEGER},
+        gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+        gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+
+  <!-- 乐观锁扣减余额：WHERE version = N AND balance >= amount -->
+  <update id="deductBalance">
+    update payment_wallet
+    set balance = balance - #{amount,jdbcType=BIGINT},
+        version = version + 1,
+        gmt_modified = NOW()
+    where id = #{walletId,jdbcType=BIGINT}
+      and version = #{version,jdbcType=INTEGER}
+      and balance >= #{amount,jdbcType=BIGINT}
+  </update>
+
+  <!-- 增加余额（退款时） -->
+  <update id="addBalance">
+    update payment_wallet
+    set balance = balance + #{amount,jdbcType=BIGINT},
+        version = version + 1,
+        gmt_modified = NOW()
+    where id = #{walletId,jdbcType=BIGINT}
+  </update>
+</mapper>
