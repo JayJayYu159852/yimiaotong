@@ -13,21 +13,31 @@ index.html/admin.html (:8080) ──CORS──▶ rag-service (:8000)
 ```
 
 ## 快速启动
-前置：MySQL(localhost:3306/hospital)、虚拟机 Redis(192.168.100.128:6379) 已启动；`.env` 已配置（百炼 API-KEY、JWT secret 等）。
+前置：Java 端已启动（确保 MySQL 已建表、Redis 已连接）；`.env` 已配置。
 
 ```bash
 cd rag-service
-# 首次：创建虚拟环境并安装依赖
-python -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-# 建表（幂等）
-.venv\Scripts\python.exe init_db.py
-# 导入示例知识文档（可选，--replace 清理同名旧文档）
-.venv\Scripts\python.exe import_docs.py --replace
-# 启动服务
+# ▶ 启动服务（每次开机执行这一行）
 .venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
 ```
-接口文档：http://localhost:8000/docs ｜ 健康检查：`GET /api/health?deep=true`
+
+- 接口文档：http://localhost:8000/docs
+- 验证：`curl http://localhost:8000/api/health?deep=true` 返回 `{"code":200}`
+- 修改代码或 `.env` 后需重启（`Ctrl+C` → 重新启动）
+
+### 首次部署
+```bash
+# 1. 创建虚拟环境
+python -m venv .venv
+# 2. 安装依赖（含 langgraph、langfuse）
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+# 3. 复制配置模板
+cp .env.example .env
+# 4. 建表（幂等）
+.venv\Scripts\python.exe init_db.py
+# 5. 导入示例文档（可选）
+.venv\Scripts\python.exe import_docs.py --replace
+```
 
 ## 实用脚本
 | 脚本 | 用途 |

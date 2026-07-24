@@ -139,8 +139,42 @@ public class SchedulePlanGenerator implements ApplicationRunner {
                 log.info("定时生成完成：本次共新增 {} 条计划", totalCreated);
             }
 
+            // ========== 3. 补初始化：已有计划但 Redis 无库存 key 的，SETNX 设置初始值 ==========
+            initMissingStockForWindow(today);
+
         } catch (Exception e) {
             log.warn("定时生成计划失败，下次重试", e);
+        }
+    }
+
+    /**
+     * 对 7 天窗口内所有已有计划，补初始化 Redis 秒杀库存（仅缺 key 时写入，不覆盖已有库存）
+     */
+    private void initMissingStockForWindow(LocalDate today) {
+        try {
+            Date windowStart = Date.from(today.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            Date windowEnd = Date.from(today.plusDays(6).atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+            VisitPlanExample example = new VisitPlanExample();
+            example.createCriteria()
+                    .andDayGreaterThanOrEqualTo(windowStart)
+                    .andDayLessThanOrEqualTo(windowEnd);
+            List<VisitPlan> plans = planMapper.selectByExample(example);
+
+            int initialized = 0;
+            for (VisitPlan plan : plans) {
+                String stockKey = "seckill:stock:" + plan.getId();
+                Boolean absent = stringRedisTemplate.opsForValue().setIfAbsent(stockKey, String.valueOf(STOCK_PER_PLAN));
+                if (Boolean.TRUE.equals(absent)) {
+                    initialized++;
+                }
+            }
+            if (initialized > 0) {
+                log.info("补初始化 Redis 秒杀库存：{} 条计划（stock={}）", initialized, STOCK_PER_PLAN);
+            }
+
+        } catch (Exception e) {
+            log.warn("补初始化 Redis 库存失败，下次重试", e);
         }
     }
 

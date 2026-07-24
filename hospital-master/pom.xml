@@ -145,6 +145,13 @@
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
+        <!-- 本地缓存: Caffeine（对标黑马点评多级缓存） -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>2.9.3</version>
+        </dependency>
+
         <!-- 对象存储: MinIO (替换七牛云) -->
         <dependency>
             <groupId>io.minio</groupId>

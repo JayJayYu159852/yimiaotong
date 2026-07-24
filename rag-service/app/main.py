@@ -65,5 +65,12 @@ app.include_router(kb.router)
 app.include_router(chat.router)
 
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    """优雅关闭：Langfuse flush 未发送的观测数据"""
+    from app.rag.tracing import shutdown_langfuse
+    shutdown_langfuse()
+
+
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=settings.service_port)

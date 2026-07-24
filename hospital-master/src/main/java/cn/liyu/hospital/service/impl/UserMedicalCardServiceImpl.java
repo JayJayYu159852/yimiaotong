@@ -81,12 +81,25 @@ public class UserMedicalCardServiceImpl implements IUserMedicalCardService {
     @Override
     public boolean update(Long relationId, UserMedicalCardUpdateParam param) {
 
+        UserMedicalCardRelation relation = relationMapper.selectByPrimaryKey(relationId);
+        Long cardId = relation.getCardId();
+
+        // 若身份证号有变更，检查是否已被其他卡占用
+        if (StrUtil.isNotBlank(param.getIdentificationNumber())) {
+            UserMedicalCard current = medicalCardMapper.selectByPrimaryKey(cardId);
+            if (current != null && !param.getIdentificationNumber().equals(current.getIdentificationNumber())) {
+                if (countIdentificationNumberExclude(param.getIdentificationNumber(), cardId)) {
+                    return false;
+                }
+            }
+        }
+
         // 更新信息参数
         UserMedicalCard card = new UserMedicalCard();
 
         BeanUtils.copyProperties(param, card);
 
-        card.setId(relationMapper.selectByPrimaryKey(relationId).getCardId());
+        card.setId(cardId);
         card.setGmtModified(new Date());
 
         int count = medicalCardMapper.updateByPrimaryKeySelective(card);
@@ -271,6 +284,17 @@ public class UserMedicalCardServiceImpl implements IUserMedicalCardService {
     }
 
     /**
+     * 通过关系编号获取就诊卡编号
+     *
+     * @param relationId 关系编号
+     * @return 就诊卡编号
+     */
+    @Override
+    public Long getCardIdByRelationId(Long relationId) {
+        return relationMapper.selectByPrimaryKey(relationId).getCardId();
+    }
+
+    /**
      * 统计用户绑定的就诊卡数量
      *
      * @param accountId 账号编号
@@ -299,6 +323,24 @@ public class UserMedicalCardServiceImpl implements IUserMedicalCardService {
 
         example.createCriteria()
                 .andIdentificationNumberEqualTo(identificationNumber);
+
+        return medicalCardMapper.countByExample(example) > 0;
+    }
+
+    /**
+     * 判断身份证号是否已被其他就诊卡使用（排除当前卡）
+     *
+     * @param identificationNumber 身份证编号
+     * @param excludeCardId        排除的当前卡编号
+     * @return 是否已被其他卡使用
+     */
+    @Override
+    public boolean countIdentificationNumberExclude(String identificationNumber, Long excludeCardId) {
+        UserMedicalCardExample example = new UserMedicalCardExample();
+
+        example.createCriteria()
+                .andIdentificationNumberEqualTo(identificationNumber)
+                .andIdNotEqualTo(excludeCardId);
 
         return medicalCardMapper.countByExample(example) > 0;
     }

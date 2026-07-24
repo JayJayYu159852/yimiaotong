@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
+import cn.hutool.core.util.StrUtil;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Optional;
@@ -71,6 +72,19 @@ public class UserMedicalCardController {
     public CommonResult<String> updateMedicalCard(@PathVariable Long relationId, @RequestBody UserMedicalCardUpdateParam param) {
         if (!medicalCardService.countRelation(relationId)) {
             return CommonResult.validateFailed("不存在，该关系编号！");
+        }
+
+        // 前端可能不传身份证号，有传才需要校验
+        if (StrUtil.isNotBlank(param.getIdentificationNumber())) {
+            // 查出当前就诊卡 ID，检查身份证号是否被其他卡占用
+            UserMedicalCard current = medicalCardService.getOptional(
+                    medicalCardService.getCardIdByRelationId(relationId)
+            ).orElse(null);
+            if (current != null && !param.getIdentificationNumber().equals(current.getIdentificationNumber())) {
+                if (medicalCardService.countIdentificationNumberExclude(param.getIdentificationNumber(), current.getId())) {
+                    return CommonResult.validateFailed("该身份证号已被其他就诊卡使用！");
+                }
+            }
         }
 
         if (medicalCardService.update(relationId, param)) {

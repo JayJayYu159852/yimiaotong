@@ -4,6 +4,7 @@ import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.github.pagehelper.Page;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,11 +33,15 @@ import java.util.function.Supplier;
 /**
  * 缓存工具客户端（封装缓存穿透/击穿/雪崩解决方案）
  * <p>
- * 对标黑马点评 CacheClient：
- * - queryWithPassThrough：空值缓存防穿透
- * - queryWithMutex：互斥锁防击穿
- * - queryWithLogicalExpire：逻辑过期 + 异步重建防击穿
- * - setWithLogicalExpire：预加载带逻辑过期时间的数据
+ * 对标黑马点评 CacheClient，新增多级缓存架构：
+ * <ul>
+ *   <li>L1 Caffeine 本地缓存：纳秒级，10min 过期</li>
+ *   <li>布隆过滤器：拦截一定不存在的 Key，防穿透第一道防线</li>
+ *   <li>L2 Redis 分布式缓存：毫秒级，业务自定义 TTL</li>
+ *   <li>空值缓存：防穿透第二道防线</li>
+ *   <li>互斥锁 / 逻辑过期：防击穿</li>
+ *   <li>随机 TTL：防雪崩</li>
+ * </ul>
  *
  * @author 医秒通
  * @date 2024/7/13
@@ -80,6 +85,18 @@ public class CacheClient {
     private StringRedisTemplate stringRedisTemplate;
 
     /**
+     * L1 本地缓存（Caffeine，进程内），优先于 L2 Redis
+     */
+    @Resource
+    private Cache<String, Object> localCache;
+
+    /**
+     * Redisson 布隆过滤器，拦截一定不存在的 Key（防穿透第一道防线）
+     */
+    @Resource
+    private BloomFilterService bloomFilter;
+
+    /**
      * 应用关闭时优雅关闭缓存重建线程池
      */
     @PreDestroy
@@ -95,53 +112,192 @@ public class CacheClient {
         }
     }
 
-    // ==================== 缓存穿透 — 空值缓存 ====================
+    // ==================== 缓存穿透 — 空值缓存（多级：Caffeine → 布隆 → Redis → DB） ====================
 
     /**
-     * 缓存穿透防护（空值缓存）
+     * 缓存穿透防护（Caffeine L1 → 布隆 → Redis L2 → DB）
      * <p>
-     * 适用场景：查询单个对象（医院详情、医生详情）
-     *
-     * @param keyPrefix  key 前缀
-     * @param id         业务 ID
-     * @param type       返回类型
-     * @param dbFallback 数据库回调
-     * @param time       缓存时间
-     * @param unit       时间单位
-     * @param <R>        返回类型泛型
-     * @param <ID>       ID类型泛型
+     * 查询链路：
+     * <ol>
+     *   <li>查 Caffeine 本地缓存（命中直接返回）</li>
+     *   <li>布隆过滤器判断（一定不存在 → 直接返回 null，1% 误判放过由空值缓存兜底）</li>
+     *   <li>查 Redis（命中回写 Caffeine）</li>
+     *   <li>查数据库（查到的写 Redis + Caffeine，查不到的写空值防穿透）</li>
+     * </ol>
      */
     public <R, ID> R queryWithPassThrough(String keyPrefix, ID id, Class<R> type,
                                            Function<ID, R> dbFallback, Long time, TimeUnit unit) {
         String key = keyPrefix + id;
 
-        // 1. 查 Redis
+        // 1. 查 Caffeine L1 本地缓存（纳秒级）
+        Object cached = localCache.getIfPresent(key);
+        if (cached != null) {
+            return cached == CacheNullValue.INSTANCE ? null : JSONUtil.toBean((String) cached, type);
+        }
+
+        // 2. 布隆过滤器拦截：一定不存在的 Key 直接返回
+        if (!mightExistByBloom(keyPrefix, id)) {
+            return null;
+        }
+
+        // 3. 查 Redis L2
         String json = stringRedisTemplate.opsForValue().get(key);
 
-        // 2. 命中且非空
+        // 4. 命中且非空 → 回写 Caffeine + 返回
         if (StrUtil.isNotBlank(json)) {
+            localCache.put(key, json);
             return JSONUtil.toBean(json, type);
         }
 
-        // 3. 命中空值（防穿透标记）
+        // 5. 命中空值（防穿透标记）
         if (json != null) {
+            localCache.put(key, CacheNullValue.INSTANCE);
             return null;
         }
 
-        // 4. 查数据库
+        // 6. 查数据库
         R r = dbFallback.apply(id);
 
-        // 5. 数据库也不存在 → 写空值防穿透
+        // 7. 数据库也不存在 → 写 Redis 空值 + Caffeine 标记
         if (r == null) {
             stringRedisTemplate.opsForValue().set(key, "", CACHE_NULL_TTL, TimeUnit.MINUTES);
+            localCache.put(key, CacheNullValue.INSTANCE);
             return null;
         }
 
-        // 6. 写入缓存
-        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(r), time, unit);
+        // 8. 数据库有值 → 写 Redis + Caffeine（布隆已注册，数据写入时通过管理端完成）
+        String valueJson = JSONUtil.toJsonStr(r);
+        stringRedisTemplate.opsForValue().set(key, valueJson, time, unit);
+        localCache.put(key, valueJson);
 
         return r;
     }
+
+    /**
+     * 缓存穿透防护（全链路多级缓存：Caffeine → 布隆 → 空值 → 互斥锁 → DB）
+     * <p>
+     * 在 queryWithPassThrough 基础上叠加互斥锁防击穿。
+     * 适用场景：热点医院详情、热门医生信息（读并发高 + 重建耗时长）
+     */
+    public <R, ID> R queryWithMultiLevel(String keyPrefix, ID id, Class<R> type,
+                                          Function<ID, R> dbFallback, Long time, TimeUnit unit) {
+        String key = keyPrefix + id;
+        String lockKey = keyPrefix + "lock:" + id;
+
+        // 1. 查 Caffeine L1
+        Object cached = localCache.getIfPresent(key);
+        if (cached != null) {
+            return cached == CacheNullValue.INSTANCE ? null : JSONUtil.toBean((String) cached, type);
+        }
+
+        // 2. 布隆拦截
+        if (!mightExistByBloom(keyPrefix, id)) {
+            return null;
+        }
+
+        // 3. 查 Redis L2
+        String json = stringRedisTemplate.opsForValue().get(key);
+        if (StrUtil.isNotBlank(json)) {
+            localCache.put(key, json);
+            return JSONUtil.toBean(json, type);
+        }
+        if (json != null) {
+            localCache.put(key, CacheNullValue.INSTANCE);
+            return null;
+        }
+
+        // 4. Redis miss → 互斥锁 + 查库（其余逻辑对齐 queryWithMutex）
+        for (int i = 0; i < MUTEX_MAX_RETRY; i++) {
+            if (!tryLock(lockKey)) {
+                try {
+                    Thread.sleep(MUTEX_RETRY_INTERVAL_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return null;
+                }
+                json = stringRedisTemplate.opsForValue().get(key);
+                if (StrUtil.isNotBlank(json)) {
+                    localCache.put(key, json);
+                    return JSONUtil.toBean(json, type);
+                }
+                if (json != null) {
+                    localCache.put(key, CacheNullValue.INSTANCE);
+                    return null;
+                }
+                continue;
+            }
+            try {
+                // 双重检查
+                json = stringRedisTemplate.opsForValue().get(key);
+                if (StrUtil.isNotBlank(json)) {
+                    localCache.put(key, json);
+                    return JSONUtil.toBean(json, type);
+                }
+
+                R r = dbFallback.apply(id);
+                if (r == null) {
+                    stringRedisTemplate.opsForValue().set(key, "", CACHE_NULL_TTL, TimeUnit.MINUTES);
+                    localCache.put(key, CacheNullValue.INSTANCE);
+                } else {
+                    String valueJson = JSONUtil.toJsonStr(r);
+                    stringRedisTemplate.opsForValue().set(key, valueJson, time, unit);
+                    localCache.put(key, valueJson);
+                }
+                return r;
+            } finally {
+                unlock(lockKey);
+            }
+        }
+
+        LOGGER.warn("多级缓存获取锁重试超限，降级直查数据库: key={}", key);
+        return dbFallback.apply(id);
+    }
+
+    /**
+     * 布隆过滤包装：根据 keyPrefix 推断实体类型，调用对应过滤器
+     */
+    private boolean mightExistByBloom(String prefix, Object id) {
+        if (prefix == null || id == null) {
+            return true; // 无法推断 → 放过
+        }
+        Long idLong = (id instanceof Long) ? (Long) id : Long.valueOf(id.toString());
+        if (prefix.startsWith("cache:info:")) {
+            return bloomFilter.mightContainHospital(idLong);
+        }
+        if (prefix.startsWith("cache:doctor:")) {
+            return bloomFilter.mightContainDoctor(idLong);
+        }
+        if (prefix.startsWith("cache:special:")) {
+            return bloomFilter.mightContainSpecial(idLong);
+        }
+        if (prefix.startsWith("cache:notice:")) {
+            return bloomFilter.mightContainNotice(idLong);
+        }
+        // 未能识别的前缀 → 放过，走常规流程
+        return true;
+    }
+
+    /**
+     * 本地缓存 key 失效（数据变更时同步调用）
+     * <p>
+     * 注意：此处失效的是带 id 的精确 key；前缀批量失效见 {@link #evictLocalByPrefix(String)}
+     */
+    public void evictLocalCache(String key) {
+        localCache.invalidate(key);
+    }
+
+    /**
+     * 本地缓存按前缀批量失效（SCAN 遍历 + invalidate）
+     */
+    public void evictLocalByPrefix(String prefix) {
+        // Caffeine 不支持前缀匹配，用迭代器遍历
+        localCache.asMap().keySet().removeIf(k -> k.startsWith(prefix));
+    }
+
+    /**
+     * 空值占位对象（Caffeine 中区分"不存在"与"未缓存"）
+     */
+    private enum CacheNullValue { INSTANCE }
 
     // ==================== 缓存击穿 — 互斥锁 ====================
 
@@ -162,9 +318,16 @@ public class CacheClient {
         String key = keyPrefix + id;
         String lockKey = keyPrefix + "lock:" + id;
 
-        // 1. 查 Redis
+        // 1. 查 Caffeine L1
+        Object cached = localCache.getIfPresent(key);
+        if (cached != null) {
+            return cached == CacheNullValue.INSTANCE ? null : JSONUtil.toBean((String) cached, type);
+        }
+
+        // 2. 查 Redis L2
         String json = stringRedisTemplate.opsForValue().get(key);
         if (StrUtil.isNotBlank(json)) {
+            localCache.put(key, json);
             LOGGER.debug("缓存命中: key={}", key);
             return JSONUtil.toBean(json, type);
         }
@@ -209,13 +372,14 @@ public class CacheClient {
                 // 4. 查询数据库
                 R r = dbFallback.apply(id);
 
-                // 5. 写缓存
+                // 5. 写 Redis + Caffeine
                 if (r == null) {
-                    LOGGER.debug("数据库无结果，写入空值缓存: key={}", key);
                     stringRedisTemplate.opsForValue().set(key, "", CACHE_NULL_TTL, TimeUnit.MINUTES);
+                    localCache.put(key, CacheNullValue.INSTANCE);
                 } else {
-                    LOGGER.info("写入缓存: key={}", key);
-                    stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(r), time, unit);
+                    String valueJson = JSONUtil.toJsonStr(r);
+                    stringRedisTemplate.opsForValue().set(key, valueJson, time, unit);
+                    localCache.put(key, valueJson);
                 }
                 return r;
             } finally {
@@ -443,12 +607,7 @@ public class CacheClient {
     }
 
     /**
-     * 按前缀删除缓存（SCAN 非阻塞遍历，禁用 KEYS 防止阻塞 Redis）
-     * <p>
-     * 用于列表缓存的主动失效：数据变更后删除该业务下所有参数组合的列表 key，
-     * 与黑马点评"先更新数据库，再删除缓存"的一致性策略保持一致。
-     *
-     * @param prefix 缓存 key 前缀（如 cache:doctor:list:）
+     * 按前缀删除缓存（Redis SCAN + Caffeine 同步失效）
      */
     public void deleteByPrefix(String prefix) {
         Set<String> keys = new HashSet<>();
@@ -464,6 +623,8 @@ public class CacheClient {
         if (!keys.isEmpty()) {
             stringRedisTemplate.delete(keys);
         }
+        // 同步失效 Caffeine L1（前缀匹配删除）
+        evictLocalByPrefix(prefix);
     }
 
     /**
@@ -522,10 +683,12 @@ public class CacheClient {
     }
 
     /**
-     * 普通缓存写入
+     * 普通缓存写入（Redis + Caffeine 双写）
      */
     public void set(String key, Object value, Long time, TimeUnit unit) {
-        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(value), time, unit);
+        String json = JSONUtil.toJsonStr(value);
+        stringRedisTemplate.opsForValue().set(key, json, time, unit);
+        localCache.put(key, json);
     }
 
     /**

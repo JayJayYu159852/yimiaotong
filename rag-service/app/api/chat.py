@@ -1,6 +1,7 @@
-"""智能问答与会话管理 API（SSE 流式 + 引用溯源 + 多轮上下文 + 缓存限流）"""
+"""智能问答与会话管理 API（SSE 流式 + 引用溯源 + 多轮上下文 + 缓存限流 + Langfuse 可观测）"""
 import json
 import logging
+import time
 
 from fastapi import APIRouter, Depends
 from fastapi.concurrency import run_in_threadpool
@@ -16,6 +17,7 @@ from app.db.mysql import get_db
 from app.rag.agent import stream_agent_answer
 from app.rag.chain import build_messages, rewrite_question
 from app.rag.retriever import hybrid_retrieve
+from app.rag.tracing import get_langfuse_handler, trace_answer, trace_retrieval
 from app.services.chat_service import (
     add_token_usage,
     check_daily_budget,
@@ -72,7 +74,9 @@ async def completions(param: ChatParam, user: UserContext = Depends(get_current_
 
             # 多轮改写用于"检索"，原问题+历史用于"生成"（标准 RAG 实践）
             rewritten = await run_in_threadpool(rewrite_question, param.question, history)
+            t0 = time.perf_counter()
             chunks = await run_in_threadpool(hybrid_retrieve, rewritten)
+            retrieval_ms = (time.perf_counter() - t0) * 1000
             sources = [
                 {
                     "docName": c["docName"],
@@ -84,7 +88,14 @@ async def completions(param: ChatParam, user: UserContext = Depends(get_current_
             ]
             yield _sse({"type": "sources", "sources": sources})
 
-            answer, token_usage, tool_used = "", 0, False
+            # Langfuse 检索 Trace（异步，不阻塞主流）
+            await run_in_threadpool(trace_retrieval, param.question, sources, retrieval_ms)
+
+            # Langfuse Callback（如配置了 KEY 则注入，控制 LLM 调用自动上报）
+            langfuse_handler = await run_in_threadpool(get_langfuse_handler)
+            callbacks = [langfuse_handler] if langfuse_handler else None
+
+            answer, token_usage, tool_used, worker = "", 0, False, ""
             async for delta, usage, tool_flag in stream_agent_answer(
                 build_messages(param.question, chunks, history)
             ):
@@ -103,6 +114,11 @@ async def completions(param: ChatParam, user: UserContext = Depends(get_current_
             # 知识库有命中且未走实时工具的首轮问答才进缓存（号源数据实时变化，禁止缓存）
             if not history and sources and not tool_used:
                 await run_in_threadpool(qa_cache_set, param.question, answer, sources)
+
+            # Langfuse 问答 Trace（Token/引用/路由，异步不阻塞）
+            await run_in_threadpool(
+                trace_answer, conv_id, param.question, answer, token_usage, sources, worker
+            )
 
             yield _sse({
                 "type": "done", "conversationId": conv_id,

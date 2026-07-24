@@ -1,6 +1,8 @@
-"""混合检索（向量语义 + BM25 关键词）+ gte-rerank 重排
-两阶段检索：粗召回（双路各取 top10 去重合并）-> 精排（rerank 取 top4，低分丢弃）
+"""混合检索（向量语义 + BM25 关键词）+ RRF 融合 + gte-rerank 重排
+两阶段检索：粗召回（双路各取 top_k + RRF 加权融合）-> 精排（rerank 取 top-n，低分丢弃）
 BM25 索引常驻内存，知识库变更后置脏标记按需重建（分块量级小，重建秒级）。
+
+RRF 公式：score(d) = Σ 1/(k + rank_i(d))，默认 k=60
 """
 import logging
 import threading
@@ -20,6 +22,8 @@ logger = logging.getLogger(__name__)
 TOP_K_VECTOR = 10
 TOP_K_BM25 = 10
 RERANK_TOP_N = 4
+# RRF 融合常数 k（平滑处理，避免单路高排名主导）
+RRF_K = 60
 # 重排分低于该阈值视为不相关直接丢弃。
 # 注意：gte-rerank-v2 分数非校准概率，相关内容也常落在 0.15~0.3 区间，
 # 阈值只做"地板"过滤真噪声，把握不准时宁可放行、靠 Prompt 兜底（实测调优结论）
@@ -78,45 +82,62 @@ def _rebuild_if_dirty() -> tuple[BM25Okapi | None, list[dict]]:
 
 
 def hybrid_retrieve(question: str) -> list[dict]:
-    """混合检索 + 重排，返回 [{content, docId, docName, chunkIndex, score, recall}]"""
+    """混合检索 + RRF 融合 + gte-rerank 重排，返回 [{content, docId, docName, chunkIndex, score, recall}]"""
     bm25, chunks = _rebuild_if_dirty()
     if not chunks:
         return []
     doc_ids = list({c["docId"] for c in chunks})
-    candidates: dict[str, dict] = {}
 
-    # 路1：向量召回（语义相似，"退钱"能命中"退费"）
+    # 路1：向量语义召回（排序列表，位置=rank）
+    vector_ranked: list[dict] = []
     try:
         vec_results = get_vectorstore().similarity_search_with_relevance_scores(
             question, k=TOP_K_VECTOR, filter={"docId": {"$in": doc_ids}}
         )
         for doc, _score in vec_results:
             key = f"{doc.metadata.get('docId')}-{doc.metadata.get('chunkIndex')}"
-            candidates[key] = {
+            vector_ranked.append({
                 "key": key,
                 "content": doc.page_content,
                 "docId": doc.metadata.get("docId"),
                 "docName": doc.metadata.get("docName"),
                 "chunkIndex": doc.metadata.get("chunkIndex"),
-                "recall": "vector",
-            }
+            })
     except Exception:
         logger.exception("向量召回失败，降级仅用 BM25")
 
-    # 路2：BM25 关键词召回（医生名/科室名等专有名词更稳）
+    # 路2：BM25 关键词召回（排序列表，位置=rank）
+    bm25_ranked: list[dict] = []
     if bm25 is not None:
         scores = bm25.get_scores(jieba.lcut(question))
-        top_idx = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:TOP_K_BM25]
-        for i in top_idx:
+        sorted_idx = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
+        for i in sorted_idx[:TOP_K_BM25]:
             if scores[i] <= 0:
                 continue
-            chunk = chunks[i]
-            if chunk["key"] in candidates:
-                candidates[chunk["key"]]["recall"] = "both"
-            else:
-                candidates[chunk["key"]] = {**chunk, "recall": "bm25"}
+            bm25_ranked.append({**chunks[i]})
 
-    return _rerank(question, list(candidates.values()))
+    # RRF 融合：两路各维护 key→rank 的映射，按 RRF 公式加权
+    rrf_scores: dict[str, float] = {}
+    candidates: dict[str, dict] = {}
+
+    for rank, item in enumerate(vector_ranked, start=1):
+        rrf_scores[item["key"]] = rrf_scores.get(item["key"], 0) + 1.0 / (RRF_K + rank)
+        if item["key"] not in candidates:
+            candidates[item["key"]] = {**item, "recall": "vector"}
+
+    for rank, item in enumerate(bm25_ranked, start=1):
+        rrf_scores[item["key"]] = rrf_scores.get(item["key"], 0) + 1.0 / (RRF_K + rank)
+        if item["key"] in candidates:
+            candidates[item["key"]]["recall"] = "both"
+        else:
+            candidates[item["key"]] = {**item, "recall": "bm25"}
+
+    # 按 RRF 分降序取 top-n（两路融合后的候选，上限是两路总数）
+    merged = sorted(rrf_scores.items(), key=lambda kv: kv[1], reverse=True)
+    merged_candidates = [candidates[key] for key, _ in merged]
+    logger.debug("RRF 融合: 向量%d + BM25%d → %d 候选", len(vector_ranked), len(bm25_ranked), len(merged_candidates))
+
+    return _rerank(question, merged_candidates)
 
 
 def _rerank(question: str, candidates: list[dict]) -> list[dict]:

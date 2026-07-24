@@ -108,12 +108,29 @@ public interface IUserMedicalCardService {
     boolean countCardId(Long cardId);
 
     /**
+     * 通过关系编号获取就诊卡编号
+     *
+     * @param relationId 关系编号
+     * @return 就诊卡编号
+     */
+    Long getCardIdByRelationId(Long relationId);
+
+    /**
      * 判断就诊卡信息是否存在
      *
      * @param identificationNumber 身份证编号
      * @return 是否存在
      */
     boolean countIdentificationNumber(String identificationNumber);
+
+    /**
+     * 判断身份证号是否已被其他就诊卡使用（排除当前卡）
+     *
+     * @param identificationNumber 身份证编号
+     * @param excludeCardId        排除的当前卡编号
+     * @return 是否已被其他卡使用
+     */
+    boolean countIdentificationNumberExclude(String identificationNumber, Long excludeCardId);
 
     /**
      * 注册时创建默认就诊卡（本人，姓名+手机号，其余信息待完善）

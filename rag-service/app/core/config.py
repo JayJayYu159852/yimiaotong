@@ -39,9 +39,18 @@ class Settings(BaseSettings):
     redis_password: str = ""
     redis_db: int = 2
 
+    # ==================== Langfuse 可观测 ====================
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = "https://cloud.langfuse.com"
+
     # ==================== 服务 ====================
     service_port: int = 8000
     cors_origins: str = "http://localhost:8080"
+
+    @property
+    def langfuse_enabled(self) -> bool:
+        return bool(self.langfuse_public_key and self.langfuse_secret_key)
 
     @property
     def mysql_url(self) -> str:
